@@ -4,23 +4,25 @@ declare(strict_types=1);
 
 namespace IngeniozIT\Router\Tests;
 
-use IngeniozIT\Http\Message\UriFactory;
-use IngeniozIT\Router\EmptyRouteStack;
-use IngeniozIT\Router\InvalidRoute;
-use IngeniozIT\Router\Tests\Fakes\TestHandler;
-use IngeniozIT\Router\Tests\Fakes\TestMiddleware;
 use PHPUnit\Framework\TestCase;
-use IngeniozIT\Router\Route;
-use IngeniozIT\Router\Router;
-use IngeniozIT\Router\RouteGroup;
+use Psr\Http\Message\ResponseInterface;
+use IngeniozIT\Router\{
+    RouteGroup,
+    Router,
+    Route,
+    EmptyRouteStack,
+    InvalidRoute,
+};
+use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\MiddlewareInterface;
-use Psr\Http\Server\RequestHandlerInterface;
+use IngeniozIT\Router\Tests\Fakes\{TestHandler, TestMiddleware};
+use IngeniozIT\Http\Message\UriFactory;
 use Closure;
 
 /**
  * @SuppressWarnings(PHPMD.StaticAccess)
  * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 final class RouterTest extends TestCase
 {
@@ -53,10 +55,10 @@ final class RouterTest extends TestCase
     {
         return [
             'RequestHandler' => [new TestHandler(self::responseFactory(), self::streamFactory())],
-            'RequestHandler callable' => [fn(ServerRequestInterface $request) => self::response('TEST')],
+            'RequestHandler callable' => [static fn(ServerRequestInterface $request): ResponseInterface => self::response('TEST')],
             'RequestHandler DI Container name' => [TestHandler::class],
             'Middleware' => [new TestMiddleware(self::responseFactory(), self::streamFactory())],
-            'Middleware callable' => [fn(ServerRequestInterface $request, RequestHandlerInterface $handler) => self::response('TEST')],
+            'Middleware callable' => [static fn(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface => self::response('TEST')],
             'Middleware DI Container name' => [TestMiddleware::class],
         ];
     }
@@ -75,8 +77,8 @@ final class RouterTest extends TestCase
     public function testFiltersOutRoutesWithWrongPath(): void
     {
         $routeGroup = new RouteGroup(routes: [
-            Route::get(path: '/test', callback: fn() => self::response('TEST')),
-            Route::get(path: '/test2', callback: fn() => self::response('TEST2')),
+            Route::get(path: '/test', callback: static fn(): ResponseInterface => self::response('TEST')),
+            Route::get(path: '/test2', callback: static fn(): ResponseInterface => self::response('TEST2')),
         ]);
         $request = self::serverRequest('GET', '/test2');
 
@@ -88,8 +90,8 @@ final class RouterTest extends TestCase
     public function testFiltersOutRoutesWithWrongMethod(): void
     {
         $routeGroup = new RouteGroup(routes: [
-            Route::get(path: '/', callback: fn() => self::response('TEST')),
-            Route::post(path: '/', callback: fn() => self::response('TEST2')),
+            Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST')),
+            Route::post(path: '/', callback: static fn(): ResponseInterface => self::response('TEST2')),
         ]);
         $request = self::serverRequest('POST', '/');
 
@@ -101,8 +103,8 @@ final class RouterTest extends TestCase
     public function testMustFindARouteToProcess(): void
     {
         $routeGroup = new RouteGroup(routes: [
-            Route::get(path: '/foo', callback: fn() => self::response('TEST')),
-            Route::get(path: '/bar', callback: fn() => self::response('TEST2')),
+            Route::get(path: '/foo', callback: static fn(): ResponseInterface => self::response('TEST')),
+            Route::get(path: '/bar', callback: static fn(): ResponseInterface => self::response('TEST2')),
         ]);
         $request = self::serverRequest('GET', '/');
 
@@ -115,7 +117,7 @@ final class RouterTest extends TestCase
         $routeGroup = new RouteGroup(routes: []);
         $request = self::serverRequest('GET', '/');
 
-        $response = $this->router($routeGroup, fn() => self::response('TEST'))->handle($request);
+        $response = $this->router($routeGroup, static fn(): ResponseInterface => self::response('TEST'))->handle($request);
 
         self::assertEquals('TEST', (string) $response->getBody());
     }

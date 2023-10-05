@@ -6,6 +6,6 @@ namespace IngeniozIT\Router;
 
 use OutOfRangeException;
 
-class EmptyRouteStack extends OutOfRangeException
+final class EmptyRouteStack extends OutOfRangeException
 {
 }

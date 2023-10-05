@@ -6,6 +6,6 @@ namespace IngeniozIT\Router;
 
 use InvalidArgumentException;
 
-class InvalidRoute extends InvalidArgumentException
+final class InvalidRoute extends InvalidArgumentException
 {
 }

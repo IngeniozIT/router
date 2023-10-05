@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace IngeniozIT\Router;
 
-use Closure;
-use IngeniozIT\Router\Tests\Fakes\TestMiddleware;
 use Psr\Container\ContainerInterface;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Http\Message\{ServerRequestInterface, ResponseInterface};
+use Psr\Http\Server\{RequestHandlerInterface, MiddlewareInterface};
+use Closure;
 
 final readonly class Router implements RequestHandlerInterface
 {
@@ -23,27 +21,33 @@ final readonly class Router implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         foreach ($this->routeGroup->routes as $route) {
-            if ($route->matches($request) === false) {
+            if ($route->match($request) === false) {
                 continue;
             }
+
             /** @var object $callback */
             $callback = is_string($route->callback) ?
                 $this->container->get($route->callback) :
                 $route->callback;
-            if (is_a($callback, RequestHandlerInterface::class)) {
+            if ($callback instanceof RequestHandlerInterface) {
                 return $callback->handle($request);
             }
-            if (is_a($callback, TestMiddleware::class)) {
+
+            if ($callback instanceof MiddlewareInterface) {
                 return $callback->process($request, $this);
             }
+
             if (!is_callable($callback)) {
                 throw new InvalidRoute('Route callback is not callable.');
             }
+
             return $callback($request, $this);
         }
-        if (empty($this->fallback)) {
+
+        if (!$this->fallback instanceof \Closure) {
             throw new EmptyRouteStack('No routes left to process.');
         }
+
         return ($this->fallback)($request);
     }
 }

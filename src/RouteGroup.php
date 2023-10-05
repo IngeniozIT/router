@@ -7,7 +7,7 @@ namespace IngeniozIT\Router;
 use Psr\Http\Server\MiddlewareInterface;
 use Closure;
 
-class RouteGroup
+final class RouteGroup
 {
     /**
      * @param Route[] $routes
