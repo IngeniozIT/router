@@ -101,4 +101,11 @@ final class RouteTest extends TestCase
         self::assertSame([], $matchingResult);
         self::assertSame(false, $nonMatchingResult);
     }
+
+    public function testCanBeNamed(): void
+    {
+        $route = Route::get('/foo', 'foo', 'route name');
+
+        self::assertEquals('route name', $route->name);
+    }
 }
