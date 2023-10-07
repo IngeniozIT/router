@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace IngeniozIT\Router;
 
-use Psr\Http\Server\{RequestHandlerInterface, MiddlewareInterface};
 use Psr\Http\Message\ServerRequestInterface;
-use Closure;
 
 final readonly class Route
 {
@@ -39,7 +37,7 @@ final readonly class Route
     /**
      * @param array<string, string> $patterns
      */
-    public static function get(string $path, Closure|string|RequestHandlerInterface|MiddlewareInterface $callback, ?string $name = null, array $patterns = []): self
+    public static function get(string $path, mixed $callback, ?string $name = null, array $patterns = []): self
     {
         return new self(self::GET, $path, $callback, $name, $patterns);
     }
@@ -47,7 +45,7 @@ final readonly class Route
     /**
      * @param array<string, string> $patterns
      */
-    public static function post(string $path, Closure|string|RequestHandlerInterface|MiddlewareInterface $callback, ?string $name = null, array $patterns = []): self
+    public static function post(string $path, mixed $callback, ?string $name = null, array $patterns = []): self
     {
         return new self(self::POST, $path, $callback, $name, $patterns);
     }
@@ -55,7 +53,7 @@ final readonly class Route
     /**
      * @param array<string, string> $patterns
      */
-    public static function put(string $path, Closure|string|RequestHandlerInterface|MiddlewareInterface $callback, ?string $name = null, array $patterns = []): self
+    public static function put(string $path, mixed $callback, ?string $name = null, array $patterns = []): self
     {
         return new self(self::PUT, $path, $callback, $name, $patterns);
     }
@@ -63,7 +61,7 @@ final readonly class Route
     /**
      * @param array<string, string> $patterns
      */
-    public static function patch(string $path, Closure|string|RequestHandlerInterface|MiddlewareInterface $callback, ?string $name = null, array $patterns = []): self
+    public static function patch(string $path, mixed $callback, ?string $name = null, array $patterns = []): self
     {
         return new self(self::PATCH, $path, $callback, $name, $patterns);
     }
@@ -71,7 +69,7 @@ final readonly class Route
     /**
      * @param array<string, string> $patterns
      */
-    public static function delete(string $path, Closure|string|RequestHandlerInterface|MiddlewareInterface $callback, ?string $name = null, array $patterns = []): self
+    public static function delete(string $path, mixed $callback, ?string $name = null, array $patterns = []): self
     {
         return new self(self::DELETE, $path, $callback, $name, $patterns);
     }
@@ -79,7 +77,7 @@ final readonly class Route
     /**
      * @param array<string, string> $patterns
      */
-    public static function head(string $path, Closure|string|RequestHandlerInterface|MiddlewareInterface $callback, ?string $name = null, array $patterns = []): self
+    public static function head(string $path, mixed $callback, ?string $name = null, array $patterns = []): self
     {
         return new self(self::HEAD, $path, $callback, $name, $patterns);
     }
@@ -87,7 +85,7 @@ final readonly class Route
     /**
      * @param array<string, string> $patterns
      */
-    public static function options(string $path, Closure|string|RequestHandlerInterface|MiddlewareInterface $callback, ?string $name = null, array $patterns = []): self
+    public static function options(string $path, mixed $callback, ?string $name = null, array $patterns = []): self
     {
         return new self(self::OPTIONS, $path, $callback, $name, $patterns);
     }
@@ -95,7 +93,7 @@ final readonly class Route
     /**
      * @param array<string, string> $patterns
      */
-    public static function any(string $path, Closure|string|RequestHandlerInterface|MiddlewareInterface $callback, ?string $name = null, array $patterns = []): self
+    public static function any(string $path, mixed $callback, ?string $name = null, array $patterns = []): self
     {
         return new self(self::ANY, $path, $callback, $name, $patterns);
     }
@@ -104,7 +102,7 @@ final readonly class Route
      * @param string[] $methods
      * @param array<string, string> $patterns
      */
-    public static function some(array $methods, string $path, Closure|string|RequestHandlerInterface|MiddlewareInterface $callback, ?string $name = null, array $patterns = []): self
+    public static function some(array $methods, string $path, mixed $callback, ?string $name = null, array $patterns = []): self
     {
         $method = 0;
         foreach ($methods as $methodString) {
@@ -120,7 +118,7 @@ final readonly class Route
     public function __construct(
         public int $method,
         public string $path,
-        public Closure|string|RequestHandlerInterface|MiddlewareInterface $callback,
+        public mixed $callback,
         public ?string $name = null,
         public array $patterns = [],
     ) {
@@ -136,13 +134,13 @@ final readonly class Route
         }
 
         $path = $request->getUri()->getPath();
-        preg_match_all('/{(.+)}/', $this->path, $matches, PREG_SET_ORDER);
+        $parameters = $this->extractParametersFromPath($this->path);
 
-        if (empty($matches)) {
+        if ($parameters === []) {
             return $path === $this->path ? [] : false;
         }
 
-        $extractedParameters = $this->extractParameters($matches, $path);
+        $extractedParameters = $this->extractParametersValues($parameters, $path);
         return $extractedParameters === [] ? false : $extractedParameters;
     }
 
@@ -152,25 +150,37 @@ final readonly class Route
     }
 
     /**
-     * @param array<string[]> $matches
-     * @return array<string, string>
+     * @return string[]
      */
-    private function extractParameters(array $matches, string $path): array
+    private function extractParametersFromPath(string $path): array
     {
-        preg_match($this->buildRegex($matches), $path, $matches);
-        return array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+        preg_match_all('/{(.+)}/', $path, $matches, PREG_SET_ORDER);
+        return array_map(
+            static fn(array $match): string => $match[1],
+            $matches
+        );
     }
 
     /**
-     * @param array<string[]> $matches
+     * @param string[] $parameters
+     * @return array<string, string>
+     */
+    private function extractParametersValues(array $parameters, string $path): array
+    {
+        preg_match($this->buildRegex($parameters), $path, $parameters);
+        return array_filter($parameters, 'is_string', ARRAY_FILTER_USE_KEY);
+    }
+
+    /**
+     * @param string[] $matches
      */
     private function buildRegex(array $matches): string
     {
         $quotedPath = '#' . preg_quote($this->path, '#') . '#';
         foreach ($matches as $match) {
             $quotedPath = str_replace(
-                '\{' . $match[1] . '\}',
-                '(?<' . $match[1] . '>' . ($this->patterns[$match[1]] ?? '[^/]+') . ')',
+                '\{' . $match . '\}',
+                '(?<' . $match . '>' . ($this->patterns[$match] ?? '[^/]+') . ')',
                 $quotedPath
             );
         }
