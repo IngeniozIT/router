@@ -135,11 +135,46 @@ final readonly class Route
             return false;
         }
 
-        return $request->getUri()->getPath() === $this->path ? [] : false;
+        $path = $request->getUri()->getPath();
+        preg_match_all('/{(.+)}/', $this->path, $matches, PREG_SET_ORDER);
+
+        if (empty($matches)) {
+            return $path === $this->path ? [] : false;
+        }
+
+        $extractedParameters = $this->extractParameters($matches, $path);
+        return $extractedParameters === [] ? false : $extractedParameters;
     }
 
     private function httpMethodMatches(string $method): bool
     {
         return ($this->method & self::METHODS[$method]) !== 0;
+    }
+
+    /**
+     * @param array<string[]> $matches
+     * @return array<string, string>
+     */
+    private function extractParameters(array $matches, string $path): array
+    {
+        preg_match($this->buildRegex($matches), $path, $matches);
+        return array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+    }
+
+    /**
+     * @param array<string[]> $matches
+     */
+    private function buildRegex(array $matches): string
+    {
+        $quotedPath = '#' . preg_quote($this->path, '#') . '#';
+        foreach ($matches as $match) {
+            $quotedPath = str_replace(
+                '\{' . $match[1] . '\}',
+                '(?<' . $match[1] . '>' . ($this->patterns[$match[1]] ?? '[^/]+') . ')',
+                $quotedPath
+            );
+        }
+
+        return $quotedPath;
     }
 }

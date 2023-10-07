@@ -102,6 +102,29 @@ final class RouteTest extends TestCase
         self::assertSame(false, $nonMatchingResult);
     }
 
+    public function testExtractsParametersFromPath(): void
+    {
+        $route = Route::get('/foo/{bar}', 'foo');
+        $request = self::serverRequest('GET', '/foo/baz');
+
+        $result = $route->match($request);
+
+        self::assertSame(['bar' => 'baz'], $result);
+    }
+
+    public function testCanUseCustomParameterPatterns(): void
+    {
+        $route = Route::get('/foo/{bar}', 'foo', patterns: ['bar' => '\d+/\d+']);
+        $matchingRequest = self::serverRequest('GET', '/foo/123/456');
+        $nonMatchingRequest = self::serverRequest('GET', '/foo/baz');
+
+        $matchingResult = $route->match($matchingRequest);
+        $nonMatchingResult = $route->match($nonMatchingRequest);
+
+        self::assertSame(['bar' => '123/456'], $matchingResult);
+        self::assertSame(false, $nonMatchingResult);
+    }
+
     public function testCanBeNamed(): void
     {
         $route = Route::get('/foo', 'foo', 'route name');
