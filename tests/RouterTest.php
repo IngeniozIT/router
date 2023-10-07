@@ -100,6 +100,22 @@ final class RouterTest extends TestCase
         self::assertEquals('TEST2', (string) $response->getBody());
     }
 
+    public function testAddsMatchedParametersToRequest(): void
+    {
+        $routeGroup = new RouteGroup(routes: [
+            Route::get(
+                path: '/{foo}',
+                callback: static fn(ServerRequestInterface $request): ResponseInterface =>
+                self::response(var_export($request->getAttribute('foo'), true))
+            ),
+        ]);
+        $request = self::serverRequest('GET', '/bar');
+
+        $response = $this->router($routeGroup)->handle($request);
+
+        self::assertEquals("'bar'", (string) $response->getBody());
+    }
+
     public function testMustFindARouteToProcess(): void
     {
         $routeGroup = new RouteGroup(routes: [

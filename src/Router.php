@@ -21,8 +21,14 @@ final readonly class Router implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         foreach ($this->routeGroup->routes as $route) {
-            if ($route->match($request) === false) {
+            $matchedParams = $route->match($request);
+            if ($matchedParams === false) {
                 continue;
+            }
+
+            $newRequest = $request;
+            foreach ($matchedParams as $key => $value) {
+                $newRequest = $newRequest->withAttribute($key, $value);
             }
 
             /** @var object $callback */
@@ -30,18 +36,18 @@ final readonly class Router implements RequestHandlerInterface
                 $this->container->get($route->callback) :
                 $route->callback;
             if ($callback instanceof RequestHandlerInterface) {
-                return $callback->handle($request);
+                return $callback->handle($newRequest);
             }
 
             if ($callback instanceof MiddlewareInterface) {
-                return $callback->process($request, $this);
+                return $callback->process($newRequest, $this);
             }
 
             if (!is_callable($callback)) {
                 throw new InvalidRoute('Route callback is not callable.');
             }
 
-            return $callback($request, $this);
+            return $callback($newRequest, $this);
         }
 
         if (!$this->fallback instanceof \Closure) {
