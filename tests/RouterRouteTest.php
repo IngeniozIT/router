@@ -25,7 +25,7 @@ use Closure;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
-final class RouterTest extends TestCase
+final class RouterRouteTest extends TestCase
 {
     use PsrTrait;
 
@@ -137,96 +137,5 @@ final class RouterTest extends TestCase
         $response = $this->router($routeGroup, static fn(): ResponseInterface => self::response('TEST'))->handle($request);
 
         self::assertEquals('TEST', (string) $response->getBody());
-    }
-
-    /**
-     * @dataProvider providerMiddlewares
-     */
-    public function testCanHaveAMiddlewares(Closure $middleware, string $expectedResponse): void
-    {
-        $routeGroup = new RouteGroup(
-            routes: [
-                Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST2')),
-            ],
-            middlewares: [$middleware],
-        );
-        $request = self::serverRequest('GET', '/');
-
-        $response = $this->router($routeGroup)->handle($request);
-
-        self::assertEquals($expectedResponse, (string) $response->getBody());
-    }
-
-    /**
-     * @return array<string, array{middleware: Closure, expectedResponse: string}>
-     */
-    public static function providerMiddlewares(): array
-    {
-        return [
-            'middleware that returns a response' => [
-                'middleware' => static fn(): ResponseInterface => self::response('TEST'),
-                'expectedResponse' => 'TEST',
-            ],
-            'middleware that forwards to handler' => [
-                'middleware' => static fn(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface => $handler->handle($request),
-                'expectedResponse' => 'TEST2',
-            ],
-        ];
-    }
-
-    /**
-     * @dataProvider providerConditions
-     */
-    public function testCanHaveConditions(Closure $condition, string $expectedResponse): void
-    {
-        $routeGroup = new RouteGroup(
-            routes: [
-                Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST2')),
-            ],
-            conditions: [$condition],
-        );
-        $request = self::serverRequest('GET', '/');
-
-        $response = $this->router($routeGroup, static fn(): ResponseInterface => self::response('TEST'))->handle($request);
-
-        self::assertEquals($expectedResponse, (string) $response->getBody());
-    }
-
-    /**
-     * @return array<string, array{condition: Closure, expectedResponse: string}>
-     */
-    public static function providerConditions(): array
-    {
-        return [
-            'valid condition executes routes' => [
-                'condition' => static fn(): array => [],
-                'expectedResponse' => 'TEST2',
-            ],
-            'invalid condition executes fallback' => [
-                'condition' => static fn(): bool => false,
-                'expectedResponse' => 'TEST',
-            ],
-        ];
-    }
-
-    public function testAddsConditionsParametersToRequest(): void
-    {
-        $routeGroup = new RouteGroup(
-            routes: [
-                Route::get(
-                    path: '/',
-                    callback: static fn(ServerRequestInterface $request): ResponseInterface =>
-                    self::response(var_export($request->getAttribute('foo'), true))
-                ),
-            ],
-            conditions: [
-                static fn(): array => ['foo' => 'bar'],
-            ],
-        );
-        $request = self::serverRequest('GET', '/');
-
-        $response = $this->router($routeGroup)->handle($request);
-
-        self::assertEquals("'bar'", (string) $response->getBody());
     }
 }
