@@ -5,19 +5,13 @@ declare(strict_types=1);
 namespace IngeniozIT\Router\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\ResponseInterface;
-use IngeniozIT\Router\{
-    RouteGroup,
-    Router,
-    Route,
-};
-use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
+use IngeniozIT\Router\{InvalidRoute, RouteGroup, Router, Route};
+use IngeniozIT\Http\Message\UriFactory;
 use Closure;
 
 /**
  * @SuppressWarnings(PHPMD.StaticAccess)
- * @SuppressWarnings(PHPMD.UnusedFormalParameter)
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 final class RouterConditionTest extends TestCase
 {
@@ -35,15 +29,16 @@ final class RouterConditionTest extends TestCase
     {
         $routeGroup = new RouteGroup(
             routes: [
-                        Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST2')),
-                    ],
+                Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST2')),
+            ],
             conditions: [$condition],
         );
         $request = self::serverRequest('GET', '/');
 
-        $response = $this->router($routeGroup, static fn(): ResponseInterface => self::response('TEST'))->handle($request);
+        $response = $this->router($routeGroup, static fn(): ResponseInterface =>
+            self::response('TEST'))->handle($request);
 
-        self::assertEquals($expectedResponse, (string) $response->getBody());
+        self::assertEquals($expectedResponse, (string)$response->getBody());
     }
 
     /**
@@ -63,24 +58,51 @@ final class RouterConditionTest extends TestCase
         ];
     }
 
-    public function testAddsConditionsParametersToRequest(): void
+    /**
+     * @dataProvider providerInvalidConditions
+     */
+    public function testCannotExecuteInvalidConditions(mixed $condition): void
     {
         $routeGroup = new RouteGroup(
             routes: [
-                        Route::get(
-                            path: '/',
-                            callback: static fn(ServerRequestInterface $request): ResponseInterface =>
-                            self::response(var_export($request->getAttribute('foo'), true))
-                        ),
-                    ],
+                Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST')),
+            ],
+            conditions: [$condition],
+        );
+        $request = self::serverRequest('GET', '/');
+
+        self::expectException(InvalidRoute::class);
+        $this->router($routeGroup)->handle($request);
+    }
+
+    /**
+     * @return array<string, array{0: mixed}>
+     */
+    public static function providerInvalidConditions(): array
+    {
+        return [
+            'not a callable' => [UriFactory::class],
+            'callable that does not return array or false' => [static fn(): bool => true],
+        ];
+    }
+
+    public function testAddsConditionParametersToRequest(): void
+    {
+        $routeGroup = new RouteGroup(
+            routes: [
+                Route::get(
+                    path: '/',
+                    callback: static fn(ServerRequestInterface $request): ResponseInterface => self::response(var_export($request->getAttribute('foo'), true))
+                ),
+            ],
             conditions: [
-                        static fn(): array => ['foo' => 'bar'],
-                    ],
+                static fn(): array => ['foo' => 'bar'],
+            ],
         );
         $request = self::serverRequest('GET', '/');
 
         $response = $this->router($routeGroup)->handle($request);
 
-        self::assertEquals("'bar'", (string) $response->getBody());
+        self::assertEquals("'bar'", (string)$response->getBody());
     }
 }

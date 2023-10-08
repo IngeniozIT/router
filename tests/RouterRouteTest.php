@@ -23,7 +23,6 @@ use Closure;
  * @SuppressWarnings(PHPMD.StaticAccess)
  * @SuppressWarnings(PHPMD.UnusedFormalParameter)
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
 final class RouterRouteTest extends TestCase
 {
@@ -61,9 +60,13 @@ final class RouterRouteTest extends TestCase
             'Middleware' => [new TestMiddleware(self::responseFactory(), self::streamFactory())],
             'Middleware callable' => [static fn(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface => self::response('TEST')],
             'Middleware DI Container name' => [TestMiddleware::class],
+            'Route that returns a string' => [static fn(): string => 'TEST'],
         ];
     }
 
+    /**
+     * @dataProvider providerInvalidHandlers
+     */
     public function testCannotExecuteAnInvalidRouteCallback(): void
     {
         $routeGroup = new RouteGroup(routes: [
@@ -73,6 +76,17 @@ final class RouterRouteTest extends TestCase
 
         self::expectException(InvalidRoute::class);
         $this->router($routeGroup)->handle($request);
+    }
+
+    /**
+     * @return array<string, array{0: mixed}>
+     */
+    public static function providerInvalidHandlers(): array
+    {
+        return [
+            'not a handler' => [UriFactory::class],
+            'value that cannot be converted to a response' => [static fn(): array => ['foo' => 'bar']],
+        ];
     }
 
     public function testFiltersOutRoutesWithWrongPath(): void
