@@ -125,9 +125,10 @@ final readonly class Route
     }
 
     /**
+     * @param array<string, string> $additionalPatterns
      * @return false|array<string, string>
      */
-    public function match(ServerRequestInterface $request): false|array
+    public function match(ServerRequestInterface $request, array $additionalPatterns = []): false|array
     {
         if (!$this->httpMethodMatches($request->getMethod())) {
             return false;
@@ -140,7 +141,7 @@ final readonly class Route
             return $path === $this->path ? [] : false;
         }
 
-        $extractedParameters = $this->extractParametersValues($parameters, $path);
+        $extractedParameters = $this->extractParametersValues($parameters, $path, $additionalPatterns);
         return $extractedParameters === [] ? false : $extractedParameters;
     }
 
@@ -160,24 +161,26 @@ final readonly class Route
 
     /**
      * @param string[][] $parameters
+     * @param array<string, string> $additionalPatterns
      * @return array<string, string>
      */
-    private function extractParametersValues(array $parameters, string $path): array
+    private function extractParametersValues(array $parameters, string $path, array $additionalPatterns): array
     {
-        preg_match($this->buildRegex($parameters), $path, $parameters);
+        preg_match($this->buildRegex($parameters, $additionalPatterns), $path, $parameters);
         return array_filter($parameters, 'is_string', ARRAY_FILTER_USE_KEY);
     }
 
     /**
      * @param string[][] $parameters
+     * @param array<string, string> $additionalPatterns
      */
-    private function buildRegex(array $parameters): string
+    private function buildRegex(array $parameters, array $additionalPatterns): string
     {
         $quotedPath = '#' . preg_quote($this->path, '#') . '#';
         foreach ($parameters as $parameter) {
             $quotedPath = str_replace(
                 preg_quote($parameter[0], '#'),
-                '(?<' . $parameter[1] . '>' . ($parameter[2] ?? $this->patterns[$parameter[1]] ?? '[^/]+') . ')',
+                '(?<' . $parameter[1] . '>' . ($parameter[2] ?? $this->patterns[$parameter[1]] ?? $additionalPatterns[$parameter[1]] ?? '[^/]+') . ')',
                 $quotedPath
             );
         }

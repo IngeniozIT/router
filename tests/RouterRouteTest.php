@@ -89,30 +89,18 @@ final class RouterRouteTest extends TestCase
         ];
     }
 
-    public function testFiltersOutRoutesWithWrongPath(): void
+    public function testFiltersOutNonMatchingRoutes(): void
     {
         $routeGroup = new RouteGroup(routes: [
-            Route::get(path: '/test', callback: static fn(): ResponseInterface => self::response('TEST')),
-            Route::get(path: '/test2', callback: static fn(): ResponseInterface => self::response('TEST2')),
+            Route::get(path: '/test', callback: static fn(): ResponseInterface => self::response('KO')),
+            Route::post(path: '/test2', callback: static fn(): ResponseInterface => self::response('KO')),
+            Route::get(path: '/test2', callback: static fn(): ResponseInterface => self::response('OK')),
         ]);
         $request = self::serverRequest('GET', '/test2');
 
         $response = $this->router($routeGroup)->handle($request);
 
-        self::assertEquals('TEST2', (string) $response->getBody());
-    }
-
-    public function testFiltersOutRoutesWithWrongMethod(): void
-    {
-        $routeGroup = new RouteGroup(routes: [
-            Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST')),
-            Route::post(path: '/', callback: static fn(): ResponseInterface => self::response('TEST2')),
-        ]);
-        $request = self::serverRequest('POST', '/');
-
-        $response = $this->router($routeGroup)->handle($request);
-
-        self::assertEquals('TEST2', (string) $response->getBody());
+        self::assertEquals('OK', (string) $response->getBody());
     }
 
     public function testAddsMatchedParametersToRequest(): void
@@ -129,6 +117,42 @@ final class RouterRouteTest extends TestCase
         $response = $this->router($routeGroup)->handle($request);
 
         self::assertEquals("'bar'", (string) $response->getBody());
+    }
+
+    /**
+     * @dataProvider providerRouteGroupsWithCustomParameters
+     */
+    public function testCanHaveCustomParameters(RouteGroup $routeGroup): void
+    {
+        $matchingRequest = self::serverRequest('GET', '/123');
+        $nonMatchingRequest = self::serverRequest('GET', '/abc');
+
+        $matchingResponse = $this->router($routeGroup)->handle($matchingRequest);
+        $nonMatchingResponse = $this->router($routeGroup, static fn(): string => 'KO')->handle($nonMatchingRequest);
+
+        self::assertEquals('OK', (string) $matchingResponse->getBody());
+        self::assertEquals('KO', (string) $nonMatchingResponse->getBody());
+    }
+
+    /**
+     * @return array<string, array{0: RouteGroup}>
+     */
+    public static function providerRouteGroupsWithCustomParameters(): array
+    {
+        return [
+            'pattern defined in route group' => [
+                new RouteGroup(
+                    routes: [Route::get(path: '/{foo}', callback: static fn(): string => 'OK')],
+                    patterns: ['foo' => '\d+'],
+                )
+            ],
+            'route pattern takes precedence over route group pattern' => [
+                new RouteGroup(
+                    routes: [Route::get(path: '/{foo}', callback: static fn(): string => 'OK', patterns: ['foo' => '\d+'])],
+                    patterns: ['foo' => '[a-z]+'],
+                )
+            ],
+        ];
     }
 
     public function testMustFindARouteToProcess(): void

@@ -95,7 +95,7 @@ final readonly class Router implements RequestHandlerInterface
     private function executeRoutes(ServerRequestInterface $request): ResponseInterface
     {
         foreach ($this->routeGroup->routes as $route) {
-            $matchedParams = $route->match($request);
+            $matchedParams = $route->match($request, $this->routeGroup->patterns);
             if ($matchedParams === false) {
                 continue;
             }
