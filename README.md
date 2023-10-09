@@ -53,6 +53,14 @@ To match a parameter with a different pattern, use a regular expression:
 
 ```php
 new RouteGroup([
+    Route::get(path: '/users/{id:[0-9]+}', callback: /* handler */),
+]);
+```
+
+Alternatively, you can define the pattern in the `patterns` parameter:
+
+```php
+new RouteGroup([
     Route::get(path: '/users/{id}', callback: /* handler */, patterns: ['id' => '[0-9]+']),
 ]);
 ```

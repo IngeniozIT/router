@@ -150,19 +150,16 @@ final readonly class Route
     }
 
     /**
-     * @return string[]
+     * @return string[][]
      */
     private function extractParametersFromPath(string $path): array
     {
-        preg_match_all('/{(.+)}/', $path, $matches, PREG_SET_ORDER);
-        return array_map(
-            static fn(array $match): string => $match[1],
-            $matches
-        );
+        preg_match_all('/{([^:]+)(?::(.+))?}/U', $path, $matches, PREG_SET_ORDER);
+        return $matches;
     }
 
     /**
-     * @param string[] $parameters
+     * @param string[][] $parameters
      * @return array<string, string>
      */
     private function extractParametersValues(array $parameters, string $path): array
@@ -172,15 +169,15 @@ final readonly class Route
     }
 
     /**
-     * @param string[] $matches
+     * @param string[][] $parameters
      */
-    private function buildRegex(array $matches): string
+    private function buildRegex(array $parameters): string
     {
         $quotedPath = '#' . preg_quote($this->path, '#') . '#';
-        foreach ($matches as $match) {
+        foreach ($parameters as $parameter) {
             $quotedPath = str_replace(
-                '\{' . $match . '\}',
-                '(?<' . $match . '>' . ($this->patterns[$match] ?? '[^/]+') . ')',
+                preg_quote($parameter[0], '#'),
+                '(?<' . $parameter[1] . '>' . ($parameter[2] ?? $this->patterns[$parameter[1]] ?? '[^/]+') . ')',
                 $quotedPath
             );
         }

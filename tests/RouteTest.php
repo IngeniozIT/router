@@ -112,17 +112,31 @@ final class RouteTest extends TestCase
         self::assertSame(['bar' => 'baz'], $result);
     }
 
-    public function testCanUseCustomParameterPatterns(): void
+    /**
+     * @dataProvider providerRoutePatterns
+     */
+    public function testCanUseCustomPatterns(Route $route): void
     {
-        $route = Route::get('/foo/{bar}', 'foo', patterns: ['bar' => '\d+/\d+']);
         $matchingRequest = self::serverRequest('GET', '/foo/123/456');
-        $nonMatchingRequest = self::serverRequest('GET', '/foo/baz');
+        $nonMatchingRequest = self::serverRequest('GET', '/foo/baz1/baz2');
 
         $matchingResult = $route->match($matchingRequest);
         $nonMatchingResult = $route->match($nonMatchingRequest);
 
-        self::assertSame(['bar' => '123/456'], $matchingResult);
+        self::assertSame(['bar' => '123', 'baz' => '456'], $matchingResult);
         self::assertSame(false, $nonMatchingResult);
+    }
+
+    /**
+     * @return array<string, array{0: Route}>
+     */
+    public static function providerRoutePatterns(): array
+    {
+        return [
+            'from the parameter' => [Route::get('/foo/{bar:\d+}/{baz:\d+}', 'foo')],
+            'from the patterns parameter' => [Route::get('/foo/{bar}/{baz}', 'foo', patterns: ['bar' => '\d+', 'baz' => '\d+'])],
+            'parameter takes precedence over patterns parameter' => [Route::get('/foo/{bar:\d+}/{baz:\d+}', 'foo', patterns: ['bar' => '[a-z]+', 'baz' => '\d+'])],
+        ];
     }
 
     public function testCanBeNamed(): void
