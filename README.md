@@ -35,6 +35,10 @@ $routes = new RouteGroup(
     ],
     patterns: ['page' => '.*'],
 );
+
+$router = new Router($routes, $container);
+
+$response = $router->handle($request);
 ```
 
 #### Path
@@ -65,7 +69,7 @@ new RouteGroup([
 ]);
 ```
 
-If you have a parameter that is used in multiple routes, you can define it in the `RouteGroup`. It will be used in all the routes of the group:
+If you have a parameter that is used in multiple routes, you can define it inside the `RouteGroup`. It will be used in all the routes of the group:
 
 ```php
 new RouteGroup(

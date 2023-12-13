@@ -13,33 +13,37 @@ use Psr\Http\Message\{
 };
 use Psr\Http\Server\{RequestHandlerInterface, MiddlewareInterface};
 
-final readonly class Router implements RequestHandlerInterface
+final class Router implements RequestHandlerInterface
 {
+    private int $conditionIndex = 0;
+    private int $middlewareIndex = 0;
+    private int $routeIndex = 0;
+
     public function __construct(
-        private RouteGroup $routeGroup,
-        private ContainerInterface $container,
-        private mixed $fallback = null,
+        private readonly RouteGroup $routeGroup,
+        private readonly ContainerInterface $container,
+        private readonly mixed $fallback = null,
     ) {
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        if ($this->routeGroup->conditions !== []) {
+        if (isset($this->routeGroup->conditions[$this->conditionIndex])) {
             return $this->executeConditions($request);
         }
 
-        if ($this->routeGroup->middlewares !== []) {
+        if (isset($this->routeGroup->middlewares[$this->middlewareIndex])) {
             return $this->executeMiddlewares($request);
         }
 
-        return $this->executeRoutes($request);
+        return $this->executeRoutables($request);
     }
 
     private function executeConditions(ServerRequestInterface $request): ResponseInterface
     {
         $newRequest = $request;
-        while ($this->routeGroup->conditions !== []) {
-            $matchedParams = $this->callConditionHandler(array_shift($this->routeGroup->conditions), $newRequest);
+        while (isset($this->routeGroup->conditions[$this->conditionIndex])) {
+            $matchedParams = $this->executeCondition($this->routeGroup->conditions[$this->conditionIndex++], $newRequest);
             if ($matchedParams === false) {
                 return $this->fallback($request);
             }
@@ -55,12 +59,12 @@ final readonly class Router implements RequestHandlerInterface
     /**
      * @return array<string, mixed>|false
      */
-    private function callConditionHandler(mixed $callback, ServerRequestInterface $request): array|false
+    private function executeCondition(mixed $callback, ServerRequestInterface $request): array|false
     {
         $handler = $this->resolveCallback($callback);
 
         if (!is_callable($handler)) {
-            throw new InvalidRoute('Condition handler cannot be called.');
+            throw new InvalidRoute("Condition callback is not callable.");
         }
 
         $result = $handler($request);
@@ -74,27 +78,30 @@ final readonly class Router implements RequestHandlerInterface
 
     private function executeMiddlewares(ServerRequestInterface $request): ResponseInterface
     {
-        return $this->callMiddlewareHandler(array_shift($this->routeGroup->middlewares), $request);
-    }
-
-    private function callMiddlewareHandler(mixed $callback, ServerRequestInterface $request): ResponseInterface
-    {
-        $handler = $this->resolveCallback($callback);
+        $middleware = $this->routeGroup->middlewares[$this->middlewareIndex++];
+        $handler = $this->resolveCallback($middleware);
 
         if ($handler instanceof MiddlewareInterface) {
             return $handler->process($request, $this);
         }
 
         if (!is_callable($handler)) {
-            throw new InvalidRoute('Middleware handler cannot be called.');
+            throw new InvalidRoute("Middleware callback is not callable.");
         }
 
         return $this->processResponse($handler($request, $this));
     }
 
-    private function executeRoutes(ServerRequestInterface $request): ResponseInterface
+    private function executeRoutables(ServerRequestInterface $request): ResponseInterface
     {
-        foreach ($this->routeGroup->routes as $route) {
+        while (isset($this->routeGroup->routes[$this->routeIndex])) {
+            $route = $this->routeGroup->routes[$this->routeIndex++];
+
+            if ($route instanceof RouteGroup) {
+                $newRouter = new Router($route, $this->container, $this->handle(...));
+                return $newRouter->handle($request);
+            }
+
             $matchedParams = $route->match($request, $this->routeGroup->patterns);
             if ($matchedParams === false) {
                 continue;
@@ -124,7 +131,7 @@ final readonly class Router implements RequestHandlerInterface
         }
 
         if (!is_callable($handler)) {
-            throw new InvalidRoute('Route handler cannot be called.');
+            throw new InvalidRoute("Route callback is not callable.");
         }
 
         return $this->processResponse($handler($request, $this));

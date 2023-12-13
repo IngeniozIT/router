@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace IngeniozIT\Router\Tests;
 
+use Exception;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use IngeniozIT\Router\{
-    InvalidRoute,
-    RouteGroup,
     Router,
+    RouteGroup,
     Route,
+    InvalidRoute,
 };
+use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use IngeniozIT\Router\Tests\Fakes\TestMiddleware;
 use Psr\Http\Server\RequestHandlerInterface;
 use IngeniozIT\Http\Message\UriFactory;
@@ -20,7 +21,7 @@ use Closure;
 /**
  * @SuppressWarnings(PHPMD.StaticAccess)
  */
-final class RouterMiddlewareTest extends TestCase
+final class RouteGroupMiddlewareTest extends TestCase
 {
     use PsrTrait;
 
@@ -66,6 +67,25 @@ final class RouterMiddlewareTest extends TestCase
                 'expectedResponse' => 'TEST2',
             ],
         ];
+    }
+
+    public function testCanHaveMultipleMiddlewares(): void
+    {
+        $routeGroup = new RouteGroup(
+            routes: [
+                Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST2')),
+            ],
+            middlewares: [
+                static fn(ServerRequestInterface $request, RequestHandlerInterface $handler) => $handler->handle($request),
+                static fn(ServerRequestInterface $request, RequestHandlerInterface $handler) => throw new Exception(''),
+            ],
+        );
+        $request = self::serverRequest('GET', '/');
+
+        self::expectException(Exception::class);
+        $response = $this->router($routeGroup)->handle($request);
+
+        self::assertEquals('TEST', (string) $response->getBody());
     }
 
     /**

@@ -17,7 +17,7 @@ final class RouteTest extends TestCase
     /**
      * @dataProvider providerMethodsAndRoutes
      */
-    public function testMatchesRequestBasedOnMethod(string $method, callable $routeCallable): void
+    public function testMatchesRequestsBasedOnMethod(string $method, callable $routeCallable): void
     {
         /** @var Route $route */
         $route = $routeCallable('/', 'foo');
@@ -89,7 +89,7 @@ final class RouteTest extends TestCase
         self::assertSame(false, $putResult);
     }
 
-    public function testMatchesRequestBasedOnPath(): void
+    public function testMatchesRequestsBasedOnPath(): void
     {
         $route = Route::get('/foo', 'foo');
         $matchingRequest = self::serverRequest('GET', '/foo');
@@ -133,9 +133,20 @@ final class RouteTest extends TestCase
     public static function providerRoutePatterns(): array
     {
         return [
-            'from the path' => [Route::get('/foo/{bar:\d+}/{baz:\d+}', 'foo')],
-            'from the patterns parameter' => [Route::get('/foo/{bar}/{baz}', 'foo', patterns: ['bar' => '\d+', 'baz' => '\d+'])],
-            'path takes precedence over the patterns parameter' => [Route::get('/foo/{bar:\d+}/{baz:\d+}', 'foo', patterns: ['bar' => '[a-z]+', 'baz' => '\d+'])],
+            'patterns inside the path' => [Route::get(
+                path: '/foo/{bar:\d+}/{baz:\d+}',
+                callback: 'foo'
+            )],
+            'patterns as a parameter' => [Route::get(
+                path: '/foo/{bar}/{baz}',
+                callback: 'foo',
+                patterns: ['bar' => '\d+', 'baz' => '\d+'],
+            )],
+            'path takes precendence over parameters' => [Route::get(
+                path: '/foo/{bar:\d+}/{baz:\d+}',
+                callback: 'foo',
+                patterns: ['bar' => '[a-z]+', 'baz' => '\d+'],
+            )],
         ];
     }
 

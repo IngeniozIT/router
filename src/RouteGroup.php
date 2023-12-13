@@ -7,7 +7,7 @@ namespace IngeniozIT\Router;
 final class RouteGroup
 {
     /**
-     * @param Route[] $routes
+     * @param array<Route|RouteGroup> $routes
      * @param mixed[] $middlewares
      * @param mixed[] $conditions
      * @param array<string, string> $patterns

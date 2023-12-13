@@ -6,14 +6,14 @@ namespace IngeniozIT\Router\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
-use IngeniozIT\Router\{InvalidRoute, RouteGroup, Router, Route};
+use IngeniozIT\Router\{Router, RouteGroup, Route, InvalidRoute};
 use IngeniozIT\Http\Message\UriFactory;
 use Closure;
 
 /**
  * @SuppressWarnings(PHPMD.StaticAccess)
  */
-final class RouterConditionTest extends TestCase
+final class RouteGroupConditionTest extends TestCase
 {
     use PsrTrait;
 
@@ -56,6 +56,25 @@ final class RouterConditionTest extends TestCase
                 'expectedResponse' => 'TEST',
             ],
         ];
+    }
+
+    public function testCanHaveMultipleConditions(): void
+    {
+        $routeGroup = new RouteGroup(
+            routes: [
+                Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST2')),
+            ],
+            conditions: [
+                static fn(): array => [],
+                static fn(): bool => false,
+            ],
+        );
+        $request = self::serverRequest('GET', '/');
+
+        $response = $this->router($routeGroup, static fn(): ResponseInterface =>
+        self::response('TEST'))->handle($request);
+
+        self::assertEquals('TEST', (string)$response->getBody());
     }
 
     /**
