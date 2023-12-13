@@ -2,6 +2,24 @@
 
 A PHP router.
 
+## About
+
+| Info | Value                                                                                                                                                                                                                                                                                                                                                                                     |
+|---|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Latest release | [![Packagist Version](https://img.shields.io/packagist/v/ingenioz-it/router)](https://packagist.org/packages/ingenioz-it/router)                                                                                                                                                                                                                                                          |
+| Requires | ![PHP from Packagist](https://img.shields.io/packagist/php-v/ingenioz-it/router.svg)                                                                                                                                                                                                                                                                                                      |
+| License | ![Packagist](https://img.shields.io/packagist/l/ingenioz-it/router)                                                                                                                                                                                                                                                                                                                       |
+| Unit tests | [![tests](https://github.com/IngeniozIT/router/actions/workflows/1-tests.yml/badge.svg)](https://github.com/IngeniozIT/router/actions/workflows/1-tests.yml)                                                                                                                                                                                                                              |
+| Code coverage | [![Code Coverage](https://codecov.io/gh/IngeniozIT/router/branch/master/graph/badge.svg)](https://codecov.io/gh/IngeniozIT/router)                                                                                                                                                                                                                                                        |
+| Code quality | [![code-quality](https://github.com/IngeniozIT/router/actions/workflows/2-code-quality.yml/badge.svg)](https://github.com/IngeniozIT/router/actions/workflows/2-code-quality.yml)                                                                                                                                                                                                         |
+| Quality tested with | [phpunit](https://github.com/sebastianbergmann/phpunit), [phan](https://github.com/phan/phan), [psalm](https://github.com/vimeo/psalm), [phpcs](https://github.com/squizlabs/PHP_CodeSniffer), [phpstan](https://github.com/phpstan/phpstan), [phpmd](https://github.com/phpmd/phpmd), [infection](https://github.com/infection/infection), [rector](https://github.com/rectorphp/rector) |
+
+## Installation
+
+```bash
+composer require ingenioz-it/router
+```
+
 ## Documentation
 
 ### Configuring the Router
