@@ -133,9 +133,9 @@ final class RouteTest extends TestCase
     public static function providerRoutePatterns(): array
     {
         return [
-            'from the parameter' => [Route::get('/foo/{bar:\d+}/{baz:\d+}', 'foo')],
+            'from the path' => [Route::get('/foo/{bar:\d+}/{baz:\d+}', 'foo')],
             'from the patterns parameter' => [Route::get('/foo/{bar}/{baz}', 'foo', patterns: ['bar' => '\d+', 'baz' => '\d+'])],
-            'parameter takes precedence over patterns parameter' => [Route::get('/foo/{bar:\d+}/{baz:\d+}', 'foo', patterns: ['bar' => '[a-z]+', 'baz' => '\d+'])],
+            'path takes precedence over the patterns parameter' => [Route::get('/foo/{bar:\d+}/{baz:\d+}', 'foo', patterns: ['bar' => '[a-z]+', 'baz' => '\d+'])],
         ];
     }
 
