@@ -9,6 +9,7 @@ use IngeniozIT\Router\Route;
 
 /**
  * @SuppressWarnings(PHPMD.StaticAccess)
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
 final class RouteTest extends TestCase
 {
@@ -115,7 +116,7 @@ final class RouteTest extends TestCase
     /**
      * @dataProvider providerRoutePatterns
      */
-    public function testCanUseCustomPatterns(Route $route): void
+    public function testCanUseCustomParameterPatterns(Route $route): void
     {
         $matchingRequest = self::serverRequest('GET', '/foo/123/456');
         $nonMatchingRequest = self::serverRequest('GET', '/foo/baz1/baz2');
@@ -140,12 +141,12 @@ final class RouteTest extends TestCase
             'patterns as a parameter' => [Route::get(
                 path: '/foo/{bar}/{baz}',
                 callback: 'foo',
-                patterns: ['bar' => '\d+', 'baz' => '\d+'],
+                where: ['bar' => '\d+', 'baz' => '\d+'],
             )],
             'path takes precendence over parameters' => [Route::get(
                 path: '/foo/{bar:\d+}/{baz:\d+}',
                 callback: 'foo',
-                patterns: ['bar' => '[a-z]+', 'baz' => '\d+'],
+                where: ['bar' => '[a-z]+', 'baz' => '\d+'],
             )],
         ];
     }
@@ -155,5 +156,12 @@ final class RouteTest extends TestCase
         $route = Route::get('/foo', 'foo', 'route name');
 
         self::assertEquals('route name', $route->name);
+    }
+
+    public function testCanHaveAdditionalAttributes(): void
+    {
+        $route = Route::get('/foo', 'foo', with: ['foo' => 'bar']);
+
+        self::assertEquals(['foo' => 'bar'], $route->with);
     }
 }

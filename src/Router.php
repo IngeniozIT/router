@@ -111,6 +111,9 @@ final class Router implements RequestHandlerInterface
             foreach ($matchedParams as $key => $value) {
                 $newRequest = $newRequest->withAttribute($key, $value);
             }
+            foreach ($route->with as $key => $value) {
+                $newRequest = $newRequest->withAttribute($key, $value);
+            }
 
             return $this->callRouteHandler($route->callback, $newRequest);
         }

@@ -23,6 +23,7 @@ use Closure;
  * @SuppressWarnings(PHPMD.StaticAccess)
  * @SuppressWarnings(PHPMD.UnusedFormalParameter)
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
 final class RouterRouteTest extends TestCase
 {
@@ -119,6 +120,23 @@ final class RouterRouteTest extends TestCase
         self::assertEquals("'bar'", (string) $response->getBody());
     }
 
+    public function testAddsAdditionalAttributesToRequest(): void
+    {
+        $routeGroup = new RouteGroup(routes: [
+            Route::get(
+                path: '/',
+                callback: static fn(ServerRequestInterface $request): ResponseInterface =>
+                self::response(var_export($request->getAttribute('foo'), true)),
+                with: ['foo' => 'bar'],
+            ),
+        ]);
+        $request = self::serverRequest('GET', '/');
+
+        $response = $this->router($routeGroup)->handle($request);
+
+        self::assertEquals("'bar'", (string) $response->getBody());
+    }
+
     /**
      * @dataProvider providerRouteGroupsWithCustomParameters
      */
@@ -148,7 +166,7 @@ final class RouterRouteTest extends TestCase
             ],
             'route pattern takes precedence over route group pattern' => [
                 new RouteGroup(
-                    routes: [Route::get(path: '/{foo}', callback: static fn(): string => 'OK', patterns: ['foo' => '\d+'])],
+                    routes: [Route::get(path: '/{foo}', callback: static fn(): string => 'OK', where: ['foo' => '\d+'])],
                     patterns: ['foo' => '[a-z]+'],
                 )
             ],
