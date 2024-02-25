@@ -17,7 +17,7 @@ class SubGroupTest extends TestCase
 
     private function router(RouteGroup $routeGroup, ?Closure $fallback = null): Router
     {
-        return new Router($routeGroup, self::container(), $fallback);
+        return new Router($routeGroup, self::container(), self::responseFactory(), self::streamFactory(), $fallback);
     }
 
     public function testCanHaveSubGroups(): void

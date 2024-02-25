@@ -22,6 +22,8 @@ final class Router implements RequestHandlerInterface
     public function __construct(
         private readonly RouteGroup $routeGroup,
         private readonly ContainerInterface $container,
+        private readonly ResponseFactoryInterface $responseFactory,
+        private readonly StreamFactoryInterface $streamFactory,
         private readonly mixed $fallback = null,
     ) {
     }
@@ -98,7 +100,13 @@ final class Router implements RequestHandlerInterface
             $route = $this->routeGroup->routes[$this->routeIndex++];
 
             if ($route instanceof RouteGroup) {
-                $newRouter = new Router($route, $this->container, $this->handle(...));
+                $newRouter = new Router(
+                    $route,
+                    $this->container,
+                    $this->responseFactory,
+                    $this->streamFactory,
+                    $this->handle(...)
+                );
                 return $newRouter->handle($request);
             }
 
@@ -152,11 +160,7 @@ final class Router implements RequestHandlerInterface
     private function processResponse(mixed $response): ResponseInterface
     {
         if (is_string($response)) {
-            /** @var StreamFactoryInterface $streamFactory */
-            $streamFactory = $this->container->get(StreamFactoryInterface::class);
-            /** @var ResponseFactoryInterface $responseFactory */
-            $responseFactory = $this->container->get(ResponseFactoryInterface::class);
-            $response = $responseFactory->createResponse()->withBody($streamFactory->createStream($response));
+            $response = $this->responseFactory->createResponse()->withBody($this->streamFactory->createStream($response));
         }
 
         if (!$response instanceof ResponseInterface) {

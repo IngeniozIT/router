@@ -13,19 +13,19 @@ use Closure;
 /**
  * @SuppressWarnings(PHPMD.StaticAccess)
  */
-final class RouteGroupConditionTest extends TestCase
+final class ConditionTest extends TestCase
 {
     use PsrTrait;
 
     private function router(RouteGroup $routeGroup, ?Closure $fallback = null): Router
     {
-        return new Router($routeGroup, self::container(), $fallback);
+        return new Router($routeGroup, self::container(), self::responseFactory(), self::streamFactory(), $fallback);
     }
 
     /**
      * @dataProvider providerConditions
      */
-    public function testCanHaveConditions(Closure $condition, string $expectedResponse): void
+    public function testRouteGroupCanHaveConditions(Closure $condition, string $expectedResponse): void
     {
         $routeGroup = new RouteGroup(
             routes: [
@@ -58,7 +58,7 @@ final class RouteGroupConditionTest extends TestCase
         ];
     }
 
-    public function testCanHaveMultipleConditions(): void
+    public function testRouteGroupCanHaveMultipleConditions(): void
     {
         $routeGroup = new RouteGroup(
             routes: [
@@ -75,6 +75,26 @@ final class RouteGroupConditionTest extends TestCase
         self::response('TEST'))->handle($request);
 
         self::assertEquals('TEST', (string)$response->getBody());
+    }
+
+    public function testConditionCanAddAttributesToARequest(): void
+    {
+        $routeGroup = new RouteGroup(
+            routes: [
+                Route::get(
+                    path: '/',
+                    callback: static fn(ServerRequestInterface $request): ResponseInterface => self::response(var_export($request->getAttribute('foo'), true))
+                ),
+            ],
+            conditions: [
+                static fn(): array => ['foo' => 'bar'],
+            ],
+        );
+        $request = self::serverRequest('GET', '/');
+
+        $response = $this->router($routeGroup)->handle($request);
+
+        self::assertEquals("'bar'", (string)$response->getBody());
     }
 
     /**
@@ -101,27 +121,7 @@ final class RouteGroupConditionTest extends TestCase
     {
         return [
             'not a callable' => [UriFactory::class],
-            'callable that does not return array or false' => [static fn(): bool => true],
+            'callable that does not return bool or array' => [static fn(): int => 42],
         ];
-    }
-
-    public function testAddsConditionParametersToRequest(): void
-    {
-        $routeGroup = new RouteGroup(
-            routes: [
-                Route::get(
-                    path: '/',
-                    callback: static fn(ServerRequestInterface $request): ResponseInterface => self::response(var_export($request->getAttribute('foo'), true))
-                ),
-            ],
-            conditions: [
-                static fn(): array => ['foo' => 'bar'],
-            ],
-        );
-        $request = self::serverRequest('GET', '/');
-
-        $response = $this->router($routeGroup)->handle($request);
-
-        self::assertEquals("'bar'", (string)$response->getBody());
     }
 }

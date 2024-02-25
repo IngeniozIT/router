@@ -21,19 +21,19 @@ use Closure;
 /**
  * @SuppressWarnings(PHPMD.StaticAccess)
  */
-final class RouteGroupMiddlewareTest extends TestCase
+final class MiddlewareTest extends TestCase
 {
     use PsrTrait;
 
     private function router(RouteGroup $routeGroup, ?Closure $fallback = null): Router
     {
-        return new Router($routeGroup, self::container(), $fallback);
+        return new Router($routeGroup, self::container(), self::responseFactory(), self::streamFactory(), $fallback);
     }
 
     /**
      * @dataProvider providerMiddlewares
      */
-    public function testCanHaveMiddlewares(mixed $middleware, string $expectedResponse): void
+    public function testRouteGroupCanHaveMiddlewares(mixed $middleware, string $expectedResponse): void
     {
         $routeGroup = new RouteGroup(
             routes: [
@@ -69,7 +69,7 @@ final class RouteGroupMiddlewareTest extends TestCase
         ];
     }
 
-    public function testCanHaveMultipleMiddlewares(): void
+    public function testRouteGroupCanHaveMultipleMiddlewares(): void
     {
         $routeGroup = new RouteGroup(
             routes: [
