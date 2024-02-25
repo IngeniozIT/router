@@ -76,18 +76,21 @@ final class RouteTest extends TestCase
 
     public function testCanMatchSomeMethods(): void
     {
-        $route = Route::some(['GET', 'POST'], '/', 'foo');
+        $route = Route::some(['GET', 'POST', 'delete'], '/', 'foo');
         $getRequest = self::serverRequest('GET', '/');
         $postRequest = self::serverRequest('POST', '/');
         $putRequest = self::serverRequest('PUT', '/');
+        $deleteRequest = self::serverRequest('DELETE', '/');
 
         $getResult = $route->match($getRequest);
         $postResult = $route->match($postRequest);
         $putResult = $route->match($putRequest);
+        $deleteResult = $route->match($deleteRequest);
 
         self::assertSame([], $getResult);
         self::assertSame([], $postResult);
         self::assertSame(false, $putResult);
+        self::assertSame([], $deleteResult);
     }
 
     public function testMatchesRequestsBasedOnPath(): void

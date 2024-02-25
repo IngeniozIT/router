@@ -115,7 +115,7 @@ final readonly class Route
     {
         $method = 0;
         foreach ($methods as $methodString) {
-            $method |= self::METHODS[$methodString];
+            $method |= self::METHODS[strtoupper($methodString)];
         }
 
         return new self($method, $path, $callback, $name, $where, $with);
