@@ -171,7 +171,6 @@ final readonly class Route
 
     /**
      * @param string[][] $parameters
-     * @param array<string, string> $additionalPatterns
      * @return array<string, string>
      */
     private function extractParametersValue(array $parameters, string $path): array
@@ -182,7 +181,6 @@ final readonly class Route
 
     /**
      * @param string[][] $parameters
-     * @param array<string, string> $additionalPatterns
      */
     private function buildRegex(array $parameters): string
     {

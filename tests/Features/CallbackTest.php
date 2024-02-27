@@ -4,7 +4,7 @@ namespace IngeniozIT\Router\Tests\Features;
 
 use Closure;
 use IngeniozIT\Http\Message\UriFactory;
-use IngeniozIT\Router\InvalidRoute;
+use IngeniozIT\Router\Exception\InvalidRouteHandler;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Fakes\TestHandler;
@@ -15,7 +15,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-class CallbackTest extends RouterCase
+final class CallbackTest extends RouterCase
 {
     /**
      * @dataProvider providerCallbacks
@@ -58,14 +58,14 @@ class CallbackTest extends RouterCase
     /**
      * @dataProvider providerInvalidHandlers
      */
-    public function testRouterCannotExecuteAnInvalidCallback(): void
+    public function testRouterCannotExecuteAnInvalidCallback(mixed $callback): void
     {
         $routeGroup = new RouteGroup(routes: [
-            Route::get(path: '/', callback: UriFactory::class),
+            Route::get(path: '/', callback: $callback),
         ]);
         $request = self::serverRequest('GET', '/');
 
-        self::expectException(InvalidRoute::class);
+        self::expectException(InvalidRouteHandler::class);
         $this->router($routeGroup)->handle($request);
     }
 

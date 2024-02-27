@@ -5,8 +5,9 @@ namespace IngeniozIT\Router\Tests\Features;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\RouterCase;
+use Psr\Http\Message\ResponseInterface;
 
-class HttpMethodTest extends RouterCase
+final class HttpMethodTest extends RouterCase
 {
     /**
      * @dataProvider providerMethodsAndRoutes
@@ -14,7 +15,7 @@ class HttpMethodTest extends RouterCase
     public function testRouteMatchesRequestsBasedOnMethod(string $method, callable $routeCallable): void
     {
         /** @var Route $route */
-        $route = $routeCallable('/', fn() => self::response('OK'));
+        $route = $routeCallable('/', static fn(): ResponseInterface => self::response('OK'));
         $request = self::serverRequest($method, '/');
 
         $response = $this->router(new RouteGroup(routes: [$route]))->handle($request);
@@ -43,7 +44,7 @@ class HttpMethodTest extends RouterCase
      */
     public function testRouteCanMatchAnyMethod(string $method): void
     {
-        $route = Route::any('/', fn() => self::response('OK'));
+        $route = Route::any('/', static fn(): ResponseInterface => self::response('OK'));
         $request = self::serverRequest($method, '/');
 
         $response = $this->router(new RouteGroup(routes: [$route]))->handle($request);
@@ -71,8 +72,8 @@ class HttpMethodTest extends RouterCase
     {
         $routeGroup = new RouteGroup(
             routes: [
-                Route::some(['GET', 'POST'], '/', fn() => self::response('OK')),
-                Route::any('/', fn() => self::response('KO')),
+                Route::some(['GET', 'POST'], '/', static fn(): ResponseInterface => self::response('OK')),
+                Route::any('/', static fn(): ResponseInterface => self::response('KO')),
             ],
         );
         $getRequest = self::serverRequest('GET', '/');
@@ -90,7 +91,7 @@ class HttpMethodTest extends RouterCase
 
     public function testMethodNameCanBeLowercase(): void
     {
-        $route = Route::some(['delete'], '/', fn() => self::response('OK'));
+        $route = Route::some(['delete'], '/', static fn(): ResponseInterface => self::response('OK'));
         $request = self::serverRequest('DELETE', '/');
 
         $result = $this->router(new RouteGroup(routes: [$route]))->handle($request);

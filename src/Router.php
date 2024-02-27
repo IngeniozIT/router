@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace IngeniozIT\Router;
 
+use IngeniozIT\Router\Exception\EmptyRouteStack;
+use IngeniozIT\Router\Exception\RouteNotFound;
+use IngeniozIT\Router\Handler\ConditionHandler;
+use IngeniozIT\Router\Handler\MiddlewaresHandler;
+use IngeniozIT\Router\Handler\RouteHandler;
 use Psr\Container\ContainerInterface;
-use Psr\Http\Message\{
-    ServerRequestInterface,
-    ResponseInterface,
-};
-use Psr\Http\Server\{RequestHandlerInterface, MiddlewareInterface};
+use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
+use Psr\Http\Server\RequestHandlerInterface;
 
 final class Router implements RequestHandlerInterface
 {
     private int $conditionIndex = 0;
+
     private int $middlewareIndex = 0;
+
     private int $routeIndex = 0;
 
     public function __construct(
@@ -31,7 +35,9 @@ final class Router implements RequestHandlerInterface
         }
 
         if (isset($this->routeGroup->middlewares[$this->middlewareIndex])) {
-            return $this->executeMiddlewares($request);
+            $middlewaresHandler = new MiddlewaresHandler($this->container, $this->routeGroup->middlewares[$this->middlewareIndex++]);
+
+            return $middlewaresHandler->handle($request, $this);
         }
 
         return $this->executeRoutables($request);
@@ -41,7 +47,9 @@ final class Router implements RequestHandlerInterface
     {
         $newRequest = $request;
         while (isset($this->routeGroup->conditions[$this->conditionIndex])) {
-            $matchedParams = $this->executeCondition($this->routeGroup->conditions[$this->conditionIndex++], $newRequest);
+            $condition = new ConditionHandler($this->container, $this->routeGroup->conditions[$this->conditionIndex++]);
+
+            $matchedParams = $condition->handle($newRequest);
             if ($matchedParams === false) {
                 return $this->fallback($request);
             }
@@ -52,42 +60,6 @@ final class Router implements RequestHandlerInterface
         }
 
         return $this->handle($newRequest);
-    }
-
-    /**
-     * @return array<string, mixed>|false
-     */
-    private function executeCondition(mixed $callback, ServerRequestInterface $request): array|false
-    {
-        $handler = $this->resolveCallback($callback);
-
-        if (!is_callable($handler)) {
-            throw new InvalidRoute("Condition callback is not callable.");
-        }
-
-        $result = $handler($request);
-
-        if ($result === false || is_array($result)) {
-            return $result;
-        }
-
-        throw new InvalidRoute('Condition handler must return an array or false.');
-    }
-
-    private function executeMiddlewares(ServerRequestInterface $request): ResponseInterface
-    {
-        $middleware = $this->routeGroup->middlewares[$this->middlewareIndex++];
-        $handler = $this->resolveCallback($middleware);
-
-        if ($handler instanceof MiddlewareInterface) {
-            return $handler->process($request, $this);
-        }
-
-        if (!is_callable($handler)) {
-            throw new InvalidRoute("Middleware callback is not callable.");
-        }
-
-        return $handler($request, $this);
     }
 
     private function executeRoutables(ServerRequestInterface $request): ResponseInterface
@@ -113,33 +85,16 @@ final class Router implements RequestHandlerInterface
             foreach ($route->with as $key => $value) {
                 $newRequest = $newRequest->withAttribute($key, $value);
             }
+
             foreach ($matchedParams as $key => $value) {
                 $newRequest = $newRequest->withAttribute($key, $value);
             }
 
-            return $this->callRouteHandler($route->callback, $newRequest);
+            $routeHandler = new RouteHandler($this->container, $route->callback);
+            return $routeHandler->handle($newRequest, $this);
         }
 
         return $this->fallback($request);
-    }
-
-    private function callRouteHandler(mixed $callback, ServerRequestInterface $request): ResponseInterface
-    {
-        $handler = $this->resolveCallback($callback);
-
-        if ($handler instanceof MiddlewareInterface) {
-            return $handler->process($request, $this);
-        }
-
-        if ($handler instanceof RequestHandlerInterface) {
-            return $handler->handle($request);
-        }
-
-        if (!is_callable($handler)) {
-            throw new InvalidRoute("Route callback is not callable.");
-        }
-
-        return $handler($request, $this);
     }
 
     private function fallback(ServerRequestInterface $request): ResponseInterface
@@ -148,20 +103,16 @@ final class Router implements RequestHandlerInterface
             throw new EmptyRouteStack('No routes left to process.');
         }
 
-        return $this->callRouteHandler($this->fallback, $request);
-    }
-
-    private function resolveCallback(mixed $callback): mixed
-    {
-        return is_string($callback) ? $this->container->get($callback) : $callback;
+        $routeHandler = new RouteHandler($this->container, $this->fallback);
+        return $routeHandler->handle($request, $this);
     }
 
     public function pathTo(string $routeName): string
     {
         $route = $this->findNamedRoute($routeName, $this->routeGroup);
 
-        if ($route === null) {
-            throw new RouteNotFound("Route with name '{$routeName}' not found.");
+        if (!$route instanceof Route) {
+            throw new RouteNotFound("Route with name '$routeName' not found.");
         }
 
         return $route->path;
@@ -172,9 +123,11 @@ final class Router implements RequestHandlerInterface
         foreach ($routeGroup->routes as $route) {
             if ($route instanceof RouteGroup) {
                 $foundRoute = $this->findNamedRoute($routeName, $route);
-                if ($foundRoute !== null) {
+                if ($foundRoute instanceof Route) {
                     return $foundRoute;
                 }
+
+                continue;
             }
 
             if ($route->name === $routeName) {

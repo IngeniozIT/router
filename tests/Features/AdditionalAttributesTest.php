@@ -8,7 +8,7 @@ use IngeniozIT\Router\Tests\RouterCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class AdditionalAttributesTest extends RouterCase
+final class AdditionalAttributesTest extends RouterCase
 {
     public function testAddsRouteAttributesToRequest(): void
     {
@@ -16,7 +16,7 @@ class AdditionalAttributesTest extends RouterCase
             Route::get(
                 path: '/',
                 callback: static fn(ServerRequestInterface $request): ResponseInterface => self::response(
-                    $request->getAttribute('foo')
+                    '' . $request->getAttribute('foo')
                 ),
                 with: ['foo' => 'bar'],
             ),
@@ -56,7 +56,7 @@ class AdditionalAttributesTest extends RouterCase
                 Route::get(
                     path: '/',
                     callback: static fn(ServerRequestInterface $request): ResponseInterface => self::response(
-                        $request->getAttribute('foo')
+                        '' . $request->getAttribute('foo')
                     ),
                     with: ['foo' => 'bar'],
                 ),
@@ -76,7 +76,7 @@ class AdditionalAttributesTest extends RouterCase
             Route::get(
                 path: '/{foo}',
                 callback: static fn(ServerRequestInterface $request): ResponseInterface => self::response(
-                    $request->getAttribute('foo')
+                    '' . $request->getAttribute('foo')
                 ),
                 with: ['foo' => 'baz'],
             ),

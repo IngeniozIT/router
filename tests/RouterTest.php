@@ -1,15 +1,14 @@
 <?php
 
-namespace IngeniozIT\Router\Tests\tmp;
+namespace IngeniozIT\Router\Tests;
 
-use IngeniozIT\Router\EmptyRouteStack;
+use IngeniozIT\Router\Exception\EmptyRouteStack;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
-use IngeniozIT\Router\Tests\RouterCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class RouterTest extends RouterCase
+final class RouterTest extends RouterCase
 {
     public function testCanHandleAGroupOfRoutes(): void
     {
@@ -57,7 +56,7 @@ class RouterTest extends RouterCase
             routes: [
                 new RouteGroup(
                     routes: [
-                        Route::get(path: '/sub', callback: static fn() => self::response('TEST')),
+                        Route::get(path: '/sub', callback: static fn(): ResponseInterface => self::response('TEST')),
                     ],
                 ),
             ],
@@ -75,10 +74,10 @@ class RouterTest extends RouterCase
             routes: [
                 new RouteGroup(
                     routes: [
-                        Route::get(path: '/sub', callback: static fn() => self::response('TEST')),
+                        Route::get(path: '/sub', callback: static fn(): ResponseInterface => self::response('TEST')),
                     ],
                 ),
-                Route::get(path: '/after-sub', callback: static fn() => self::response('TEST2')),
+                Route::get(path: '/after-sub', callback: static fn(): ResponseInterface => self::response('TEST2')),
             ],
         );
         $request = self::serverRequest('GET', '/after-sub');
@@ -110,7 +109,7 @@ class RouterTest extends RouterCase
         $nonMatchingRequest = self::serverRequest('GET', '/abc');
 
         $matchingResponse = $this->router($routeGroup)->handle($matchingRequest);
-        $nonMatchingResponse = $this->router($routeGroup, static fn() => self::response('KO'))->handle($nonMatchingRequest);
+        $nonMatchingResponse = $this->router($routeGroup, static fn(): ResponseInterface => self::response('KO'))->handle($nonMatchingRequest);
 
         self::assertEquals('OK', (string)$matchingResponse->getBody());
         self::assertEquals('KO', (string)$nonMatchingResponse->getBody());
@@ -124,19 +123,19 @@ class RouterTest extends RouterCase
         return [
             'pattern defined in path' => [
                 new RouteGroup(
-                    routes: [Route::get(path: '/{foo:\d+}', callback: static fn() => self::response('OK'))],
+                    routes: [Route::get(path: '/{foo:\d+}', callback: static fn(): ResponseInterface => self::response('OK'))],
                 )
             ],
             'pattern defined in route' => [
                 new RouteGroup(
                     routes: [
-                        Route::get(path: '/{foo}', callback: static fn() => self::response('OK'), where: ['foo' => '\d+'])
+                        Route::get(path: '/{foo}', callback: static fn(): ResponseInterface => self::response('OK'), where: ['foo' => '\d+'])
                     ],
                 )
             ],
             'pattern defined in route group' => [
                 new RouteGroup(
-                    routes: [Route::get(path: '/{foo}', callback: static fn() => self::response('OK'))],
+                    routes: [Route::get(path: '/{foo}', callback: static fn(): ResponseInterface => self::response('OK'))],
                     where: ['foo' => '\d+'],
                 )
             ],
@@ -145,7 +144,7 @@ class RouterTest extends RouterCase
                     routes: [
                         Route::get(
                             path: '/{foo:\d+}',
-                            callback: static fn() => self::response('OK'),
+                            callback: static fn(): ResponseInterface => self::response('OK'),
                             where: ['foo' => '[a-z]+']
                         )
                     ],
@@ -154,7 +153,7 @@ class RouterTest extends RouterCase
             'route pattern takes precedence over route group pattern' => [
                 new RouteGroup(
                     routes: [
-                        Route::get(path: '/{foo}', callback: static fn() => self::response('OK'), where: ['foo' => '\d+'])
+                        Route::get(path: '/{foo}', callback: static fn(): ResponseInterface => self::response('OK'), where: ['foo' => '\d+'])
                     ],
                     where: ['foo' => '[a-z]+'],
                 )
@@ -163,7 +162,7 @@ class RouterTest extends RouterCase
                 new RouteGroup(
                     routes: [
                         new RouteGroup(
-                            routes: [Route::get(path: '/{foo}', callback: static fn() => self::response('OK'))],
+                            routes: [Route::get(path: '/{foo}', callback: static fn(): ResponseInterface => self::response('OK'))],
                             where: ['foo' => '\d+'],
                         )
                     ],

@@ -38,13 +38,14 @@ final class RouteGroup
                         $path,
                     );
                 }
+
                 return new Route(
                     $route->method,
                     $path . $route->path,
                     $route->callback,
-                    array_merge($where, $route->where),
-                    array_merge($with, $route->with),
-                    name: $route->name ? $this->concatenatedName($name) . $route->name : null,
+                    [...$where, ...$route->where],
+                    [...$with, ...$route->with],
+                    name: !empty($route->name) ? $this->concatenatedName($name) . $route->name : null,
                 );
             },
             $routes,
@@ -53,6 +54,6 @@ final class RouteGroup
 
     private function concatenatedName(?string $name): ?string
     {
-        return empty($name) ? $name : $name . '.';
+        return $name === null || $name === '' ? $name : $name . '.';
     }
 }

@@ -4,14 +4,14 @@ namespace IngeniozIT\Router\Tests\Features;
 
 use Closure;
 use IngeniozIT\Http\Message\UriFactory;
-use IngeniozIT\Router\InvalidRoute;
+use IngeniozIT\Router\Exception\InvalidRouteCondition;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\RouterCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class ConditionsTest extends RouterCase
+final class ConditionsTest extends RouterCase
 {
     /**
      * @dataProvider providerConditions
@@ -101,7 +101,7 @@ class ConditionsTest extends RouterCase
         );
         $request = self::serverRequest('GET', '/');
 
-        self::expectException(InvalidRoute::class);
+        self::expectException(InvalidRouteCondition::class);
         $this->router($routeGroup)->handle($request);
     }
 
@@ -112,7 +112,7 @@ class ConditionsTest extends RouterCase
     {
         return [
             'not a callable' => [UriFactory::class],
-            'callable that does not return bool or array' => [static fn(): int => 42],
+            'callable that does not return bool or array' => [static fn(): bool => true],
         ];
     }
 }

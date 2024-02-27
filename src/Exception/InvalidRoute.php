@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace IngeniozIT\Router;
+namespace IngeniozIT\Router\Exception;
 
 use InvalidArgumentException;
 

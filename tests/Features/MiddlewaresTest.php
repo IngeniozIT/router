@@ -4,7 +4,7 @@ namespace IngeniozIT\Router\Tests\Features;
 
 use Exception;
 use IngeniozIT\Http\Message\UriFactory;
-use IngeniozIT\Router\InvalidRoute;
+use IngeniozIT\Router\Exception\InvalidRouteMiddleware;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Fakes\TestMiddleware;
@@ -12,9 +12,10 @@ use IngeniozIT\Router\Tests\RouterCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Throwable;
 
-class MiddlewaresTest extends RouterCase
+use function IngeniozIT\Edict\value;
+
+final class MiddlewaresTest extends RouterCase
 {
     /**
      * @dataProvider providerMiddlewares
@@ -58,7 +59,7 @@ class MiddlewaresTest extends RouterCase
                 Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST2')),
             ],
             middlewares: [
-                static fn(ServerRequestInterface $request, RequestHandlerInterface $handler) => $handler->handle($request),
+                static fn(ServerRequestInterface $request, RequestHandlerInterface $handler): \Psr\Http\Message\ResponseInterface => $handler->handle($request),
                 static fn(ServerRequestInterface $request, RequestHandlerInterface $handler) => throw new Exception(''),
             ],
         );
@@ -83,7 +84,7 @@ class MiddlewaresTest extends RouterCase
         );
         $request = self::serverRequest('GET', '/');
 
-        self::expectException(Throwable::class);
+        self::expectException(InvalidRouteMiddleware::class);
         $this->router($routeGroup)->handle($request);
     }
 
@@ -92,6 +93,7 @@ class MiddlewaresTest extends RouterCase
      */
     public static function providerInvalidMiddlewares(): array
     {
+        self::container()->set('not_a_callable', value('foo'));
         return [
             'not a middleware' => [UriFactory::class],
             'callable that does not return a response' => [static fn(): bool => true],

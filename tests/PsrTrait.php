@@ -13,7 +13,6 @@ use Psr\Http\Message\{
     UploadedFileFactoryInterface,
     UriFactoryInterface,
 };
-use Psr\Container\ContainerInterface;
 use IngeniozIT\Http\Message\{
     ResponseFactory,
     ServerRequestFactory,
@@ -70,7 +69,7 @@ trait PsrTrait
         );
     }
 
-    protected static function container(): ContainerInterface
+    protected static function container(): Container
     {
         $container = new Container();
 
