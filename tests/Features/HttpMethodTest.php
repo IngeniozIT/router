@@ -72,7 +72,7 @@ final class HttpMethodTest extends RouterCase
     {
         $routeGroup = new RouteGroup(
             routes: [
-                Route::some(['GET', 'POST'], '/', static fn(): ResponseInterface => self::response('OK')),
+                Route::some(['POST', 'PUT'], '/', static fn(): ResponseInterface => self::response('OK')),
                 Route::any('/', static fn(): ResponseInterface => self::response('KO')),
             ],
         );
@@ -84,9 +84,9 @@ final class HttpMethodTest extends RouterCase
         $postResult = $this->router($routeGroup)->handle($postRequest);
         $putResult = $this->router($routeGroup)->handle($putRequest);
 
-        self::assertSame('OK', (string) $getResult->getBody());
+        self::assertSame('KO', (string) $getResult->getBody());
         self::assertSame('OK', (string) $postResult->getBody());
-        self::assertSame('KO', (string) $putResult->getBody());
+        self::assertSame('OK', (string) $putResult->getBody());
     }
 
     public function testMethodNameCanBeLowercase(): void

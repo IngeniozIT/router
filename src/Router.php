@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace IngeniozIT\Router;
 
 use IngeniozIT\Router\Exception\EmptyRouteStack;
+use IngeniozIT\Router\Exception\InvalidRouteParameter;
+use IngeniozIT\Router\Exception\MissingRouteParameter;
 use IngeniozIT\Router\Exception\RouteNotFound;
 use IngeniozIT\Router\Handler\ConditionHandler;
 use IngeniozIT\Router\Handler\MiddlewaresHandler;
@@ -107,32 +109,52 @@ final class Router implements RequestHandlerInterface
         return $routeHandler->handle($request, $this);
     }
 
-    public function pathTo(string $routeName): string
+    public function pathTo(string $routeName, array $parameters = []): string
     {
-        $route = $this->findNamedRoute($routeName, $this->routeGroup);
+        $route = $this->findNamedRoute($routeName, $parameters, $this->routeGroup);
 
-        if (!$route instanceof Route) {
+        if (!$route) {
             throw new RouteNotFound("Route with name '$routeName' not found.");
         }
 
-        return $route->path;
+        return $route;
     }
 
-    private function findNamedRoute(string $routeName, RouteGroup $routeGroup): ?Route
+    private function findNamedRoute(string $routeName, array $parameters, RouteGroup $routeGroup): ?string
     {
         foreach ($routeGroup->routes as $route) {
             if ($route instanceof RouteGroup) {
-                $foundRoute = $this->findNamedRoute($routeName, $route);
-                if ($foundRoute instanceof Route) {
-                    return $foundRoute;
+                $foundRoute = $this->findNamedRoute($routeName, $parameters, $route);
+                if ($foundRoute === null) {
+                    continue;
                 }
+                return $foundRoute;
+            }
 
+            if ($route->name !== $routeName) {
                 continue;
             }
 
-            if ($route->name === $routeName) {
-                return $route;
+            if (!$route->hasParameters) {
+                return $route->path;
             }
+
+            $matchedParams = [];
+            preg_match_all('#{(\w+)}#', $route->path, $matches, PREG_SET_ORDER);
+            foreach ($matches as $match) {
+                if (!isset($parameters[$match[1]])) {
+                    throw new MissingRouteParameter($routeName, $match[1]);
+                }
+                if (!preg_match('#^' . $route->parameterPattern($match[1]) . '$#', $parameters[$match[1]])) {
+                    throw new InvalidRouteParameter($routeName, $match[1], $route->parameterPattern($match[1]));
+                }
+                $matchedParams[$match[1]] = $parameters[$match[1]];
+            }
+            $path = $route->path;
+            foreach ($matchedParams as $key => $value) {
+                $path = str_replace('{' . $key . '}', $value, $path);
+            }
+            return $path;
         }
 
         return null;

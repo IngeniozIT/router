@@ -34,6 +34,11 @@ final readonly class Route
         'OPTIONS' => self::OPTIONS,
     ];
 
+    /** @var array<string, string> */
+    public array $where;
+    public string $path;
+    public bool $hasParameters;
+
     /**
      * @param array<string, string> $where
      * @param array<string, string> $with
@@ -113,10 +118,7 @@ final readonly class Route
      */
     public static function some(array $methods, string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): self
     {
-        $method = 0;
-        foreach ($methods as $methodString) {
-            $method |= self::METHODS[strtoupper($methodString)];
-        }
+        $method = array_reduce($methods, fn($carry, $methodString) => $carry | self::METHODS[strtoupper($methodString)], 0);
 
         return new self($method, $path, $callback, $where, $with, $name);
     }
@@ -127,12 +129,25 @@ final readonly class Route
      */
     public function __construct(
         public int $method,
-        public string $path,
+        string $path,
         public mixed $callback,
-        public array $where = [],
+        array $where = [],
         public array $with = [],
         public ?string $name = null,
     ) {
+        $this->hasParameters = str_contains($path, '{');
+        [$this->where, $this->path] = $this->extractPatterns($where, $path);
+    }
+
+    private function extractPatterns(array $where, string $path): array
+    {
+        if ($this->hasParameters && str_contains($path, ':') && preg_match_all('#{(\w+):([^}]+)}#', $path, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $path = str_replace($match[0], '{' . $match[1] . '}', $path);
+                $where[$match[1]] = $match[2];
+            }
+        }
+        return [$where, $path];
     }
 
     /**
@@ -145,12 +160,12 @@ final readonly class Route
         }
 
         $path = $request->getUri()->getPath();
-        $parameters = $this->extractParametersFromPath($this->path);
 
-        if ($parameters === []) {
+        if (!$this->hasParameters) {
             return $path === $this->path ? [] : false;
         }
 
+        $parameters = $this->extractParametersFromPath($this->path);
         $extractedParameters = $this->extractParametersValue($parameters, $path);
         return $extractedParameters === [] ? false : $extractedParameters;
     }
@@ -165,7 +180,7 @@ final readonly class Route
      */
     private function extractParametersFromPath(string $path): array
     {
-        preg_match_all('/{([^:]+)(?::(.+))?}/U', $path, $matches, PREG_SET_ORDER);
+        preg_match_all('/{([^:]+)}/U', $path, $matches, PREG_SET_ORDER);
         return $matches;
     }
 
@@ -188,11 +203,16 @@ final readonly class Route
         foreach ($parameters as $parameter) {
             $regex = str_replace(
                 preg_quote($parameter[0], '#'),
-                '(?<' . $parameter[1] . '>' . ($parameter[2] ?? $this->where[$parameter[1]] ?? '[^/]+') . ')',
+                '(?<' . $parameter[1] . '>' . $this->parameterPattern($parameter[1]) . ')',
                 $regex
             );
         }
 
         return $regex;
+    }
+
+    public function parameterPattern(string $parameterName): string
+    {
+        return $this->where[$parameterName] ?? '[^/]+';
     }
 }
