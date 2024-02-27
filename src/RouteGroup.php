@@ -6,17 +6,53 @@ namespace IngeniozIT\Router;
 
 final class RouteGroup
 {
+    /** @var Route[]|RouteGroup[] */
+    public array $routes;
+
     /**
      * @param array<Route|RouteGroup> $routes
      * @param mixed[] $middlewares
      * @param mixed[] $conditions
-     * @param array<string, string> $patterns
+     * @param array<string, string> $where
+     * @param array<string, string> $with
      */
     public function __construct(
-        public array $routes,
+        array $routes,
         public array $middlewares = [],
         public array $conditions = [],
-        public array $patterns = [],
+        array $where = [],
+        array $with = [],
+        ?string $name = null,
+        ?string $path = null,
     ) {
+        $this->routes = array_map(
+            function (RouteGroup|Route $route) use ($with, $where, $name, $path): RouteGroup|Route {
+                if ($route instanceof RouteGroup) {
+                    return new RouteGroup(
+                        $route->routes,
+                        $route->middlewares,
+                        $route->conditions,
+                        $where,
+                        $with,
+                        $this->concatenatedName($name),
+                        $path,
+                    );
+                }
+                return new Route(
+                    $route->method,
+                    $path . $route->path,
+                    $route->callback,
+                    array_merge($where, $route->where),
+                    array_merge($with, $route->with),
+                    name: $route->name ? $this->concatenatedName($name) . $route->name : null,
+                );
+            },
+            $routes,
+        );
+    }
+
+    private function concatenatedName(?string $name): ?string
+    {
+        return empty($name) ? $name : $name . '.';
     }
 }

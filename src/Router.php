@@ -8,8 +8,6 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\{
     ServerRequestInterface,
     ResponseInterface,
-    StreamFactoryInterface,
-    ResponseFactoryInterface,
 };
 use Psr\Http\Server\{RequestHandlerInterface, MiddlewareInterface};
 
@@ -22,8 +20,6 @@ final class Router implements RequestHandlerInterface
     public function __construct(
         private readonly RouteGroup $routeGroup,
         private readonly ContainerInterface $container,
-        private readonly ResponseFactoryInterface $responseFactory,
-        private readonly StreamFactoryInterface $streamFactory,
         private readonly mixed $fallback = null,
     ) {
     }
@@ -91,7 +87,7 @@ final class Router implements RequestHandlerInterface
             throw new InvalidRoute("Middleware callback is not callable.");
         }
 
-        return $this->processResponse($handler($request, $this));
+        return $handler($request, $this);
     }
 
     private function executeRoutables(ServerRequestInterface $request): ResponseInterface
@@ -103,23 +99,21 @@ final class Router implements RequestHandlerInterface
                 $newRouter = new Router(
                     $route,
                     $this->container,
-                    $this->responseFactory,
-                    $this->streamFactory,
-                    $this->handle(...)
+                    $this->handle(...),
                 );
                 return $newRouter->handle($request);
             }
 
-            $matchedParams = $route->match($request, $this->routeGroup->patterns);
+            $matchedParams = $route->match($request);
             if ($matchedParams === false) {
                 continue;
             }
 
             $newRequest = $request;
-            foreach ($matchedParams as $key => $value) {
+            foreach ($route->with as $key => $value) {
                 $newRequest = $newRequest->withAttribute($key, $value);
             }
-            foreach ($route->with as $key => $value) {
+            foreach ($matchedParams as $key => $value) {
                 $newRequest = $newRequest->withAttribute($key, $value);
             }
 
@@ -145,7 +139,7 @@ final class Router implements RequestHandlerInterface
             throw new InvalidRoute("Route callback is not callable.");
         }
 
-        return $this->processResponse($handler($request, $this));
+        return $handler($request, $this);
     }
 
     private function fallback(ServerRequestInterface $request): ResponseInterface
@@ -157,21 +151,37 @@ final class Router implements RequestHandlerInterface
         return $this->callRouteHandler($this->fallback, $request);
     }
 
-    private function processResponse(mixed $response): ResponseInterface
-    {
-        if (is_string($response)) {
-            $response = $this->responseFactory->createResponse()->withBody($this->streamFactory->createStream($response));
-        }
-
-        if (!$response instanceof ResponseInterface) {
-            throw new InvalidRoute('Route callback did not return a valid response.');
-        }
-
-        return $response;
-    }
-
     private function resolveCallback(mixed $callback): mixed
     {
         return is_string($callback) ? $this->container->get($callback) : $callback;
+    }
+
+    public function pathTo(string $routeName): string
+    {
+        $route = $this->findNamedRoute($routeName, $this->routeGroup);
+
+        if ($route === null) {
+            throw new RouteNotFound("Route with name '{$routeName}' not found.");
+        }
+
+        return $route->path;
+    }
+
+    private function findNamedRoute(string $routeName, RouteGroup $routeGroup): ?Route
+    {
+        foreach ($routeGroup->routes as $route) {
+            if ($route instanceof RouteGroup) {
+                $foundRoute = $this->findNamedRoute($routeName, $route);
+                if ($foundRoute !== null) {
+                    return $foundRoute;
+                }
+            }
+
+            if ($route->name === $routeName) {
+                return $route;
+            }
+        }
+
+        return null;
     }
 }

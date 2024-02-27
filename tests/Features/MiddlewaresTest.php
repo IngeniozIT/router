@@ -1,35 +1,21 @@
 <?php
 
-declare(strict_types=1);
-
-namespace IngeniozIT\Router\Tests;
+namespace IngeniozIT\Router\Tests\Features;
 
 use Exception;
-use PHPUnit\Framework\TestCase;
-use IngeniozIT\Router\{
-    Router,
-    RouteGroup,
-    Route,
-    InvalidRoute,
-};
-use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
-use IngeniozIT\Router\Tests\Fakes\TestMiddleware;
-use Psr\Http\Server\RequestHandlerInterface;
 use IngeniozIT\Http\Message\UriFactory;
-use Closure;
+use IngeniozIT\Router\InvalidRoute;
+use IngeniozIT\Router\Route;
+use IngeniozIT\Router\RouteGroup;
+use IngeniozIT\Router\Tests\Fakes\TestMiddleware;
+use IngeniozIT\Router\Tests\RouterCase;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Throwable;
 
-/**
- * @SuppressWarnings(PHPMD.StaticAccess)
- */
-final class MiddlewareTest extends TestCase
+class MiddlewaresTest extends RouterCase
 {
-    use PsrTrait;
-
-    private function router(RouteGroup $routeGroup, ?Closure $fallback = null): Router
-    {
-        return new Router($routeGroup, self::container(), self::responseFactory(), self::streamFactory(), $fallback);
-    }
-
     /**
      * @dataProvider providerMiddlewares
      */
@@ -56,10 +42,6 @@ final class MiddlewareTest extends TestCase
         return [
             'middleware that returns a response' => [
                 'middleware' => TestMiddleware::class,
-                'expectedResponse' => 'TEST',
-            ],
-            'middleware that returns a string' => [
-                'middleware' => static fn(): string => 'TEST',
                 'expectedResponse' => 'TEST',
             ],
             'middleware that forwards to handler' => [
@@ -101,7 +83,7 @@ final class MiddlewareTest extends TestCase
         );
         $request = self::serverRequest('GET', '/');
 
-        self::expectException(InvalidRoute::class);
+        self::expectException(Throwable::class);
         $this->router($routeGroup)->handle($request);
     }
 
@@ -112,7 +94,7 @@ final class MiddlewareTest extends TestCase
     {
         return [
             'not a middleware' => [UriFactory::class],
-            'value that cannot be converted to a response' => [static fn(): array => ['foo' => 'bar']],
+            'callable that does not return a response' => [static fn(): bool => true],
         ];
     }
 }

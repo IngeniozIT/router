@@ -27,29 +27,29 @@ use function IngeniozIT\Edict\value;
 
 trait PsrTrait
 {
-    private static function responseFactory(): ResponseFactoryInterface
+    protected static function responseFactory(): ResponseFactoryInterface
     {
         return new ResponseFactory(self::streamFactory());
     }
 
-    private static function streamFactory(): StreamFactoryInterface
+    protected static function streamFactory(): StreamFactoryInterface
     {
         return new StreamFactory();
     }
 
-    private static function uriFactory(): UriFactoryInterface
+    protected static function uriFactory(): UriFactoryInterface
     {
         return new UriFactory();
     }
 
-    private static function uploadedFileFactory(): UploadedFileFactoryInterface
+    protected static function uploadedFileFactory(): UploadedFileFactoryInterface
     {
         return new UploadedFileFactory(
             self::streamFactory(),
         );
     }
 
-    private static function serverRequestFactory(): ServerRequestFactoryInterface
+    protected static function serverRequestFactory(): ServerRequestFactoryInterface
     {
         return new ServerRequestFactory(
             self::streamFactory(),
@@ -58,19 +58,19 @@ trait PsrTrait
         );
     }
 
-    private static function serverRequest(string $method, string $uri): ServerRequestInterface
+    protected static function serverRequest(string $method, string $uri): ServerRequestInterface
     {
         return self::serverRequestFactory()->createServerRequest($method, $uri);
     }
 
-    private static function response(string $content): ResponseInterface
+    protected static function response(string $content): ResponseInterface
     {
         return self::responseFactory()->createResponse()->withBody(
             self::streamFactory()->createStream($content),
         );
     }
 
-    private static function container(): ContainerInterface
+    protected static function container(): ContainerInterface
     {
         $container = new Container();
 

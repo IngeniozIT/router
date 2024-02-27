@@ -1,31 +1,25 @@
 <?php
 
-declare(strict_types=1);
-
-namespace IngeniozIT\Router\Tests;
+namespace IngeniozIT\Router\Tests\Features;
 
 use IngeniozIT\Router\Route;
-use PHPUnit\Framework\TestCase;
+use IngeniozIT\Router\RouteGroup;
+use IngeniozIT\Router\Tests\RouterCase;
 
-/**
- * @SuppressWarnings(PHPMD.StaticAccess)
- */
-class RouteHttpMethodTest extends TestCase
+class HttpMethodTest extends RouterCase
 {
-    use PsrTrait;
-
     /**
      * @dataProvider providerMethodsAndRoutes
      */
     public function testRouteMatchesRequestsBasedOnMethod(string $method, callable $routeCallable): void
     {
         /** @var Route $route */
-        $route = $routeCallable('/', 'foo');
+        $route = $routeCallable('/', fn() => self::response('OK'));
         $request = self::serverRequest($method, '/');
 
-        $result = $route->match($request);
+        $response = $this->router(new RouteGroup(routes: [$route]))->handle($request);
 
-        self::assertSame([], $result);
+        self::assertSame('OK', (string) $response->getBody());
     }
 
     /**
@@ -49,12 +43,12 @@ class RouteHttpMethodTest extends TestCase
      */
     public function testRouteCanMatchAnyMethod(string $method): void
     {
-        $route = Route::any('/', 'foo');
+        $route = Route::any('/', fn() => self::response('OK'));
         $request = self::serverRequest($method, '/');
 
-        $result = $route->match($request);
+        $response = $this->router(new RouteGroup(routes: [$route]))->handle($request);
 
-        self::assertSame([], $result);
+        self::assertSame('OK', (string) $response->getBody());
     }
 
     /**
@@ -75,27 +69,32 @@ class RouteHttpMethodTest extends TestCase
 
     public function testCanMatchSomeMethods(): void
     {
-        $route = Route::some(['GET', 'POST'], '/', 'foo');
+        $routeGroup = new RouteGroup(
+            routes: [
+                Route::some(['GET', 'POST'], '/', fn() => self::response('OK')),
+                Route::any('/', fn() => self::response('KO')),
+            ],
+        );
         $getRequest = self::serverRequest('GET', '/');
         $postRequest = self::serverRequest('POST', '/');
         $putRequest = self::serverRequest('PUT', '/');
 
-        $getResult = $route->match($getRequest);
-        $postResult = $route->match($postRequest);
-        $putResult = $route->match($putRequest);
+        $getResult = $this->router($routeGroup)->handle($getRequest);
+        $postResult = $this->router($routeGroup)->handle($postRequest);
+        $putResult = $this->router($routeGroup)->handle($putRequest);
 
-        self::assertSame([], $getResult);
-        self::assertSame([], $postResult);
-        self::assertSame(false, $putResult);
+        self::assertSame('OK', (string) $getResult->getBody());
+        self::assertSame('OK', (string) $postResult->getBody());
+        self::assertSame('KO', (string) $putResult->getBody());
     }
 
     public function testMethodNameCanBeLowercase(): void
     {
-        $route = Route::some(['delete'], '/', 'foo');
-        $deleteRequest = self::serverRequest('DELETE', '/');
+        $route = Route::some(['delete'], '/', fn() => self::response('OK'));
+        $request = self::serverRequest('DELETE', '/');
 
-        $deleteResult = $route->match($deleteRequest);
+        $result = $this->router(new RouteGroup(routes: [$route]))->handle($request);
 
-        self::assertSame([], $deleteResult);
+        self::assertSame('OK', (string) $result->getBody());
     }
 }

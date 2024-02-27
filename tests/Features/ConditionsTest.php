@@ -1,27 +1,18 @@
 <?php
 
-declare(strict_types=1);
+namespace IngeniozIT\Router\Tests\Features;
 
-namespace IngeniozIT\Router\Tests;
-
-use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
-use IngeniozIT\Router\{Router, RouteGroup, Route, InvalidRoute};
-use IngeniozIT\Http\Message\UriFactory;
 use Closure;
+use IngeniozIT\Http\Message\UriFactory;
+use IngeniozIT\Router\InvalidRoute;
+use IngeniozIT\Router\Route;
+use IngeniozIT\Router\RouteGroup;
+use IngeniozIT\Router\Tests\RouterCase;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
-/**
- * @SuppressWarnings(PHPMD.StaticAccess)
- */
-final class ConditionTest extends TestCase
+class ConditionsTest extends RouterCase
 {
-    use PsrTrait;
-
-    private function router(RouteGroup $routeGroup, ?Closure $fallback = null): Router
-    {
-        return new Router($routeGroup, self::container(), self::responseFactory(), self::streamFactory(), $fallback);
-    }
-
     /**
      * @dataProvider providerConditions
      */
@@ -36,7 +27,7 @@ final class ConditionTest extends TestCase
         $request = self::serverRequest('GET', '/');
 
         $response = $this->router($routeGroup, static fn(): ResponseInterface =>
-            self::response('TEST'))->handle($request);
+        self::response('TEST'))->handle($request);
 
         self::assertEquals($expectedResponse, (string)$response->getBody());
     }

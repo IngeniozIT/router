@@ -38,72 +38,72 @@ final readonly class Route
      * @param array<string, string> $where
      * @param array<string, string> $with
      */
-    public static function get(string $path, mixed $callback, ?string $name = null, array $where = [], array $with = []): self
+    public static function get(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): self
     {
-        return new self(self::GET, $path, $callback, $name, $where, $with);
+        return new self(self::GET, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
      * @param array<string, string> $with
      */
-    public static function post(string $path, mixed $callback, ?string $name = null, array $where = [], array $with = []): self
+    public static function post(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): self
     {
-        return new self(self::POST, $path, $callback, $name, $where, $with);
+        return new self(self::POST, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
      * @param array<string, string> $with
      */
-    public static function put(string $path, mixed $callback, ?string $name = null, array $where = [], array $with = []): self
+    public static function put(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): self
     {
-        return new self(self::PUT, $path, $callback, $name, $where, $with);
+        return new self(self::PUT, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
      * @param array<string, string> $with
      */
-    public static function patch(string $path, mixed $callback, ?string $name = null, array $where = [], array $with = []): self
+    public static function patch(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): self
     {
-        return new self(self::PATCH, $path, $callback, $name, $where, $with);
+        return new self(self::PATCH, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
      * @param array<string, string> $with
      */
-    public static function delete(string $path, mixed $callback, ?string $name = null, array $where = [], array $with = []): self
+    public static function delete(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): self
     {
-        return new self(self::DELETE, $path, $callback, $name, $where, $with);
+        return new self(self::DELETE, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
      * @param array<string, string> $with
      */
-    public static function head(string $path, mixed $callback, ?string $name = null, array $where = [], array $with = []): self
+    public static function head(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): self
     {
-        return new self(self::HEAD, $path, $callback, $name, $where, $with);
+        return new self(self::HEAD, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
      * @param array<string, string> $with
      */
-    public static function options(string $path, mixed $callback, ?string $name = null, array $where = [], array $with = []): self
+    public static function options(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): self
     {
-        return new self(self::OPTIONS, $path, $callback, $name, $where, $with);
+        return new self(self::OPTIONS, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
      * @param array<string, string> $with
      */
-    public static function any(string $path, mixed $callback, ?string $name = null, array $where = [], array $with = []): self
+    public static function any(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): self
     {
-        return new self(self::ANY, $path, $callback, $name, $where, $with);
+        return new self(self::ANY, $path, $callback, $where, $with, $name);
     }
 
     /**
@@ -111,14 +111,14 @@ final readonly class Route
      * @param array<string, string> $where
      * @param array<string, string> $with
      */
-    public static function some(array $methods, string $path, mixed $callback, ?string $name = null, array $where = [], array $with = []): self
+    public static function some(array $methods, string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): self
     {
         $method = 0;
         foreach ($methods as $methodString) {
             $method |= self::METHODS[strtoupper($methodString)];
         }
 
-        return new self($method, $path, $callback, $name, $where, $with);
+        return new self($method, $path, $callback, $where, $with, $name);
     }
 
     /**
@@ -129,17 +129,16 @@ final readonly class Route
         public int $method,
         public string $path,
         public mixed $callback,
-        public ?string $name = null,
         public array $where = [],
         public array $with = [],
+        public ?string $name = null,
     ) {
     }
 
     /**
-     * @param array<string, string> $additionalPatterns
      * @return false|array<string, string>
      */
-    public function match(ServerRequestInterface $request, array $additionalPatterns = []): false|array
+    public function match(ServerRequestInterface $request): false|array
     {
         if (!$this->httpMethodMatches($request->getMethod())) {
             return false;
@@ -152,7 +151,7 @@ final readonly class Route
             return $path === $this->path ? [] : false;
         }
 
-        $extractedParameters = $this->extractParametersValue($parameters, $path, $additionalPatterns);
+        $extractedParameters = $this->extractParametersValue($parameters, $path);
         return $extractedParameters === [] ? false : $extractedParameters;
     }
 
@@ -175,9 +174,9 @@ final readonly class Route
      * @param array<string, string> $additionalPatterns
      * @return array<string, string>
      */
-    private function extractParametersValue(array $parameters, string $path, array $additionalPatterns): array
+    private function extractParametersValue(array $parameters, string $path): array
     {
-        preg_match($this->buildRegex($parameters, $additionalPatterns), $path, $parameters);
+        preg_match($this->buildRegex($parameters), $path, $parameters);
         return array_filter($parameters, 'is_string', ARRAY_FILTER_USE_KEY);
     }
 
@@ -185,13 +184,13 @@ final readonly class Route
      * @param string[][] $parameters
      * @param array<string, string> $additionalPatterns
      */
-    private function buildRegex(array $parameters, array $additionalPatterns): string
+    private function buildRegex(array $parameters): string
     {
         $regex = '#' . preg_quote($this->path, '#') . '#';
         foreach ($parameters as $parameter) {
             $regex = str_replace(
                 preg_quote($parameter[0], '#'),
-                '(?<' . $parameter[1] . '>' . ($parameter[2] ?? $this->where[$parameter[1]] ?? $additionalPatterns[$parameter[1]] ?? '[^/]+') . ')',
+                '(?<' . $parameter[1] . '>' . ($parameter[2] ?? $this->where[$parameter[1]] ?? '[^/]+') . ')',
                 $regex
             );
         }

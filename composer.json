@@ -52,7 +52,7 @@
         "quality:psalm": "vendor/bin/psalm --no-cache --config ./quality/psalm.xml.dist",
         "quality:phan": "vendor/bin/phan --config-file ./quality/phan.php",
         "quality:phan-silent": "vendor/bin/phan --no-progress-bar --config-file ./quality/phan.php",
-        "quality:infection": "vendor/bin/infection --configuration=./quality/infection.json.dist",
+        "quality:infection": "vendor/bin/infection -j$(nproc) --configuration=./quality/infection.json.dist",
         "quality:phpmd": "vendor/bin/phpmd src/,tests/ text quality/phpmd.xml.dist",
         "fulltest": [
             "@test",
