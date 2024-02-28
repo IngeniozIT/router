@@ -5,12 +5,13 @@ namespace IngeniozIT\Router\Tests;
 use IngeniozIT\Router\Exception\EmptyRouteStack;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
+use IngeniozIT\Router\Tests\Utils\RouterCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-final class RouterTest extends RouterCase
+final class RoutingTest extends RouterCase
 {
-    public function testCanHandleAGroupOfRoutes(): void
+    public function testRouterHandlesARouteGroup(): void
     {
         $routeGroup = new RouteGroup(routes: [
             Route::get(path: '/foo', callback: static fn(): ResponseInterface => self::response('OK')),
@@ -22,22 +23,7 @@ final class RouterTest extends RouterCase
         self::assertEquals('OK', (string)$response->getBody());
     }
 
-    public function testRouteGroupCanHaveAPathPrefix(): void
-    {
-        $routeGroup = new RouteGroup(
-            routes: [
-                Route::get(path: '/bar', callback: static fn(): ResponseInterface => self::response('OK')),
-            ],
-            path: '/foo'
-        );
-        $request = self::serverRequest('GET', '/foo/bar');
-
-        $response = $this->router($routeGroup)->handle($request);
-
-        self::assertEquals('OK', (string)$response->getBody());
-    }
-
-    public function testFiltersOutNonMatchingPaths(): void
+    public function testRouterFiltersOutNonMatchingPaths(): void
     {
         $routeGroup = new RouteGroup(routes: [
             Route::get(path: '/test2', callback: static fn(): ResponseInterface => self::response('KO')),
@@ -50,25 +36,7 @@ final class RouterTest extends RouterCase
         self::assertEquals('OK', (string)$response->getBody());
     }
 
-    public function testCanHaveSubGroups(): void
-    {
-        $routeGroup = new RouteGroup(
-            routes: [
-                new RouteGroup(
-                    routes: [
-                        Route::get(path: '/sub', callback: static fn(): ResponseInterface => self::response('TEST')),
-                    ],
-                ),
-            ],
-        );
-        $request = self::serverRequest('GET', '/sub');
-
-        $response = $this->router($routeGroup)->handle($request);
-
-        self::assertEquals('TEST', (string)$response->getBody());
-    }
-
-    public function testCanHandleARouteAfterASubGroup(): void
+    public function testRouterCanHandleARouteAfterASubGroup(): void
     {
         $routeGroup = new RouteGroup(
             routes: [
@@ -87,7 +55,40 @@ final class RouterTest extends RouterCase
         self::assertEquals('TEST2', (string)$response->getBody());
     }
 
-    public function testCanUsePathParameters(): void
+    public function testRouteGroupsCanHaveSubGroups(): void
+    {
+        $routeGroup = new RouteGroup(
+            routes: [
+                new RouteGroup(
+                    routes: [
+                        Route::get(path: '/sub', callback: static fn(): ResponseInterface => self::response('TEST')),
+                    ],
+                ),
+            ],
+        );
+        $request = self::serverRequest('GET', '/sub');
+
+        $response = $this->router($routeGroup)->handle($request);
+
+        self::assertEquals('TEST', (string)$response->getBody());
+    }
+
+    public function testRouteGroupsCanHaveAPathPrefix(): void
+    {
+        $routeGroup = new RouteGroup(
+            routes: [
+                Route::get(path: '/bar', callback: static fn(): ResponseInterface => self::response('OK')),
+            ],
+            path: '/foo'
+        );
+        $request = self::serverRequest('GET', '/foo/bar');
+
+        $response = $this->router($routeGroup)->handle($request);
+
+        self::assertEquals('OK', (string)$response->getBody());
+    }
+
+    public function testRoutesCanUsePathParameters(): void
     {
         $routeGroup = new RouteGroup(routes: [
             Route::get(path: '/{foo}/{bar}', callback: static fn(ServerRequestInterface $request
@@ -103,7 +104,7 @@ final class RouterTest extends RouterCase
     /**
      * @dataProvider providerRouteGroupsWithCustomParameters
      */
-    public function testCanUseCustomPathParameterPatterns(RouteGroup $routeGroup): void
+    public function testRoutesCanUseCustomPathParameters(RouteGroup $routeGroup): void
     {
         $matchingRequest = self::serverRequest('GET', '/123');
         $nonMatchingRequest = self::serverRequest('GET', '/abc');
@@ -172,7 +173,7 @@ final class RouterTest extends RouterCase
         ];
     }
 
-    public function testMustFindARouteToProcess(): void
+    public function testRouterMustFindARouteToProcess(): void
     {
         $routeGroup = new RouteGroup(routes: [
             Route::get(path: '/foo', callback: static fn(): ResponseInterface => self::response('TEST')),
@@ -184,7 +185,7 @@ final class RouterTest extends RouterCase
         $this->router($routeGroup)->handle($request);
     }
 
-    public function testCanHaveAFallbackRoute(): void
+    public function testRouterCanHaveAFallbackRoute(): void
     {
         $routeGroup = new RouteGroup(routes: [
             Route::get(path: '/foo', callback: static fn(): ResponseInterface => self::response('TEST')),

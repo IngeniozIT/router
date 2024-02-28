@@ -1,13 +1,13 @@
 <?php
 
-namespace IngeniozIT\Router\Tests\Features;
+namespace IngeniozIT\Router\Tests;
 
 use IngeniozIT\Router\Exception\InvalidRouteParameter;
 use IngeniozIT\Router\Exception\MissingRouteParameters;
 use IngeniozIT\Router\Exception\RouteNotFound;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
-use IngeniozIT\Router\Tests\RouterCase;
+use IngeniozIT\Router\Tests\Utils\RouterCase;
 
 final class NameTest extends RouterCase
 {
@@ -27,7 +27,7 @@ final class NameTest extends RouterCase
         self::assertSame('/foo', $result);
     }
 
-    public function testRouterCanFindARoutePathByNameWithParameters(): void
+    public function testRouterCanFindARouteWithParametersPathByName(): void
     {
         $routeGroup = new RouteGroup([
             Route::get('/{foo:\d+}', 'foo', name: 'route_name'),

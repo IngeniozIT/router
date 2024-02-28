@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace IngeniozIT\Router\Tests\Fakes;
+namespace IngeniozIT\Router\Tests\Utils;
 
-use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
+use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Message\{
     ResponseFactoryInterface,
     StreamFactoryInterface,
@@ -12,7 +12,7 @@ use Psr\Http\Message\{
     ResponseInterface,
 };
 
-final readonly class TestMiddleware implements MiddlewareInterface
+final readonly class TestHandler implements RequestHandlerInterface
 {
     public function __construct(
         private ResponseFactoryInterface $responseFactory,
@@ -23,7 +23,7 @@ final readonly class TestMiddleware implements MiddlewareInterface
     /**
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
         return $this->responseFactory->createResponse()->withBody(
             $this->streamFactory->createStream('TEST'),

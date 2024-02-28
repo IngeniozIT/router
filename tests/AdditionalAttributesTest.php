@@ -1,16 +1,16 @@
 <?php
 
-namespace IngeniozIT\Router\Tests\Features;
+namespace IngeniozIT\Router\Tests;
 
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
-use IngeniozIT\Router\Tests\RouterCase;
+use IngeniozIT\Router\Tests\Utils\RouterCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 final class AdditionalAttributesTest extends RouterCase
 {
-    public function testAddsRouteAttributesToRequest(): void
+    public function testRouteAttributesAreAddedToTheRequest(): void
     {
         $routeGroup = new RouteGroup(routes: [
             Route::get(
@@ -28,7 +28,7 @@ final class AdditionalAttributesTest extends RouterCase
         self::assertEquals('bar', (string)$response->getBody());
     }
 
-    public function testAddsRouteGroupAttributesToRequest(): void
+    public function testRouteGroupAttributesAreAddedToTheRequest(): void
     {
         $routeGroup = new RouteGroup(
             routes: [

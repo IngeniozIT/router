@@ -1,13 +1,13 @@
 <?php
 
-namespace IngeniozIT\Router\Tests\Features;
+namespace IngeniozIT\Router\Tests;
 
 use Closure;
 use IngeniozIT\Http\Message\UriFactory;
 use IngeniozIT\Router\Exception\InvalidRouteCondition;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
-use IngeniozIT\Router\Tests\RouterCase;
+use IngeniozIT\Router\Tests\Utils\RouterCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -16,7 +16,7 @@ final class ConditionsTest extends RouterCase
     /**
      * @dataProvider providerConditions
      */
-    public function testRouteGroupCanHaveConditions(Closure $condition, string $expectedResponse): void
+    public function testRouteGroupsCanHaveConditions(Closure $condition, string $expectedResponse): void
     {
         $routeGroup = new RouteGroup(
             routes: [
@@ -49,7 +49,7 @@ final class ConditionsTest extends RouterCase
         ];
     }
 
-    public function testRouteGroupCanHaveMultipleConditions(): void
+    public function testRouteGroupsCanHaveMultipleConditions(): void
     {
         $routeGroup = new RouteGroup(
             routes: [
@@ -68,7 +68,7 @@ final class ConditionsTest extends RouterCase
         self::assertEquals('TEST', (string)$response->getBody());
     }
 
-    public function testConditionCanAddAttributesToARequest(): void
+    public function testConditionsCanAddAttributesToARequest(): void
     {
         $routeGroup = new RouteGroup(
             routes: [
@@ -91,7 +91,7 @@ final class ConditionsTest extends RouterCase
     /**
      * @dataProvider providerInvalidConditions
      */
-    public function testCannotExecuteInvalidConditions(mixed $condition): void
+    public function testRouterCannotExecuteInvalidConditions(mixed $condition): void
     {
         $routeGroup = new RouteGroup(
             routes: [

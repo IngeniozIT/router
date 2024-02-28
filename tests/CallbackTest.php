@@ -1,15 +1,15 @@
 <?php
 
-namespace IngeniozIT\Router\Tests\Features;
+namespace IngeniozIT\Router\Tests;
 
 use Closure;
 use IngeniozIT\Http\Message\UriFactory;
 use IngeniozIT\Router\Exception\InvalidRouteHandler;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
-use IngeniozIT\Router\Tests\Fakes\TestHandler;
-use IngeniozIT\Router\Tests\Fakes\TestMiddleware;
-use IngeniozIT\Router\Tests\RouterCase;
+use IngeniozIT\Router\Tests\Utils\RouterCase;
+use IngeniozIT\Router\Tests\Utils\TestHandler;
+use IngeniozIT\Router\Tests\Utils\TestMiddleware;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -76,7 +76,7 @@ final class CallbackTest extends RouterCase
     {
         return [
             'not a handler' => [UriFactory::class],
-            'value that cannot be converted to a response' => [static fn(): array => ['foo' => 'bar']],
+            'handler that does not return a PSR response' => [static fn(): array => ['foo' => 'bar']],
         ];
     }
 }

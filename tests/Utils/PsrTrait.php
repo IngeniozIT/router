@@ -2,25 +2,17 @@
 
 declare(strict_types=1);
 
-namespace IngeniozIT\Router\Tests;
+namespace IngeniozIT\Router\Tests\Utils;
 
-use Psr\Http\Message\{
-    ResponseFactoryInterface,
+use IngeniozIT\Edict\Container;
+use IngeniozIT\Http\Message\{ResponseFactory, ServerRequestFactory, StreamFactory, UploadedFileFactory, UriFactory,};
+use Psr\Http\Message\{ResponseFactoryInterface,
     ResponseInterface,
     ServerRequestFactoryInterface,
     ServerRequestInterface,
     StreamFactoryInterface,
     UploadedFileFactoryInterface,
-    UriFactoryInterface,
-};
-use IngeniozIT\Http\Message\{
-    ResponseFactory,
-    ServerRequestFactory,
-    StreamFactory,
-    UploadedFileFactory,
-    UriFactory,
-};
-use IngeniozIT\Edict\Container;
+    UriFactoryInterface,};
 
 use function IngeniozIT\Edict\value;
 

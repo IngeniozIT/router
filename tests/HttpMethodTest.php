@@ -1,11 +1,11 @@
 <?php
 
-namespace IngeniozIT\Router\Tests\Features;
+namespace IngeniozIT\Router\Tests;
 
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteElement;
 use IngeniozIT\Router\RouteGroup;
-use IngeniozIT\Router\Tests\RouterCase;
+use IngeniozIT\Router\Tests\Utils\RouterCase;
 use Psr\Http\Message\ResponseInterface;
 
 final class HttpMethodTest extends RouterCase
@@ -13,7 +13,7 @@ final class HttpMethodTest extends RouterCase
     /**
      * @dataProvider providerMethodsAndRoutes
      */
-    public function testRouteMatchesRequestsBasedOnMethod(string $method, callable $routeCallable): void
+    public function testRoutesMatchRequestsBasedOnMethod(string $method, callable $routeCallable): void
     {
         /** @var RouteElement $route */
         $route = $routeCallable('/', static fn(): ResponseInterface => self::response('OK'));
@@ -43,7 +43,7 @@ final class HttpMethodTest extends RouterCase
     /**
      * @dataProvider providerRouteMethods
      */
-    public function testRouteCanMatchAnyMethod(string $method): void
+    public function testRoutesCanMatchAnyMethod(string $method): void
     {
         $route = Route::any('/', static fn(): ResponseInterface => self::response('OK'));
         $request = self::serverRequest($method, '/');
@@ -69,7 +69,7 @@ final class HttpMethodTest extends RouterCase
         ];
     }
 
-    public function testCanMatchSomeMethods(): void
+    public function testRoutesCanMatchSomeMethods(): void
     {
         $routeGroup = new RouteGroup(
             routes: [

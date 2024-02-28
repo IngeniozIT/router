@@ -1,14 +1,14 @@
 <?php
 
-namespace IngeniozIT\Router\Tests\Features;
+namespace IngeniozIT\Router\Tests;
 
 use Exception;
 use IngeniozIT\Http\Message\UriFactory;
 use IngeniozIT\Router\Exception\InvalidRouteMiddleware;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
-use IngeniozIT\Router\Tests\Fakes\TestMiddleware;
-use IngeniozIT\Router\Tests\RouterCase;
+use IngeniozIT\Router\Tests\Utils\RouterCase;
+use IngeniozIT\Router\Tests\Utils\TestMiddleware;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -20,7 +20,7 @@ final class MiddlewaresTest extends RouterCase
     /**
      * @dataProvider providerMiddlewares
      */
-    public function testRouteGroupCanHaveMiddlewares(mixed $middleware, string $expectedResponse): void
+    public function testRouteGroupsCanHaveMiddlewares(mixed $middleware, string $expectedResponse): void
     {
         $routeGroup = new RouteGroup(
             routes: [
@@ -52,7 +52,7 @@ final class MiddlewaresTest extends RouterCase
         ];
     }
 
-    public function testRouteGroupCanHaveMultipleMiddlewares(): void
+    public function testRouteGroupsCanHaveMultipleMiddlewares(): void
     {
         $routeGroup = new RouteGroup(
             routes: [
@@ -74,7 +74,7 @@ final class MiddlewaresTest extends RouterCase
     /**
      * @dataProvider providerInvalidMiddlewares
      */
-    public function testCannotExecuteInvalidMiddlewares(mixed $middleware): void
+    public function testRouterCannotExecuteInvalidMiddlewares(mixed $middleware): void
     {
         $routeGroup = new RouteGroup(
             routes: [

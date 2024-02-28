@@ -1,6 +1,6 @@
 <?php
 
-namespace IngeniozIT\Router\Tests;
+namespace IngeniozIT\Router\Tests\Utils;
 
 use Closure;
 use IngeniozIT\Router\RouteGroup;
