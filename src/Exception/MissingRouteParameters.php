@@ -7,15 +7,18 @@ namespace IngeniozIT\Router\Exception;
 use InvalidArgumentException;
 use Throwable;
 
-final class MissingRouteParameter extends InvalidArgumentException
+final class MissingRouteParameters extends InvalidArgumentException
 {
+    /**
+     * @param string[] $missingParameters
+     */
     public function __construct(
         string $routeName,
-        string $parameterName,
+        array $missingParameters,
         ?Throwable $previous = null
     ) {
         parent::__construct(
-            "Missing parameter '$parameterName' for route with name '$routeName'.",
+            "Missing parameters " . implode(', ', $missingParameters) . " for route with name '$routeName'.",
             previous: $previous,
         );
     }

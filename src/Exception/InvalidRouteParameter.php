@@ -11,12 +11,12 @@ final class InvalidRouteParameter extends InvalidArgumentException
 {
     public function __construct(
         string $routeName,
-        string $parameterName,
+        string $missingParameters,
         string $pattern,
         ?Throwable $previous = null
     ) {
         parent::__construct(
-            "Parameter '$parameterName' for route with name '$routeName' does not match the pattern '$pattern'.",
+            "Parameter '$missingParameters' for route with name '$routeName' does not match the pattern '$pattern'.",
             previous: $previous,
         );
     }

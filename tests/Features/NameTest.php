@@ -3,7 +3,7 @@
 namespace IngeniozIT\Router\Tests\Features;
 
 use IngeniozIT\Router\Exception\InvalidRouteParameter;
-use IngeniozIT\Router\Exception\MissingRouteParameter;
+use IngeniozIT\Router\Exception\MissingRouteParameters;
 use IngeniozIT\Router\Exception\RouteNotFound;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
@@ -34,9 +34,21 @@ final class NameTest extends RouterCase
         ]);
         $router = $this->router($routeGroup);
 
-        $result = $router->pathTo('route_name', ['foo' => '42']);
+        $result = $router->pathTo('route_name', ['foo' => 42]);
 
         self::assertSame('/42', $result);
+    }
+
+    public function testAdditionalParametersAreAddedToThePathQuery(): void
+    {
+        $routeGroup = new RouteGroup([
+            Route::get('/{foo:\d+}', 'foo', name: 'route_name'),
+        ]);
+        $router = $this->router($routeGroup);
+
+        $result = $router->pathTo('route_name', ['foo' => '42', 'bar' => 'baz']);
+
+        self::assertSame('/42?bar=baz', $result);
     }
 
     public function testRouteGroupsPassTheirNameToTheirSubRoutes(): void
@@ -65,12 +77,12 @@ final class NameTest extends RouterCase
 
     public function testRouterCannotFindARoutePathWithMissingParameters(): void
     {
-        $route = Route::get('/{foo}', 'foo', name: 'route_name');
+        $route = Route::get('/{foo}/{bar}', 'foo', name: 'route_name');
         $router = $this->router(new RouteGroup([$route]));
 
-        self::expectException(MissingRouteParameter::class);
-        self::expectExceptionMessage("Missing parameter 'foo' for route with name 'route_name'.");
-        $router->pathTo('route_name');
+        self::expectException(MissingRouteParameters::class);
+        self::expectExceptionMessage("Missing parameters foo for route with name 'route_name'.");
+        $router->pathTo('route_name', ['bar' => '42']);
     }
 
     public function testRouterCannotFindARoutePathWithInvalidParameters(): void

@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace IngeniozIT\Router;
 
 use IngeniozIT\Router\Exception\EmptyRouteStack;
-use IngeniozIT\Router\Exception\InvalidRouteParameter;
-use IngeniozIT\Router\Exception\MissingRouteParameter;
 use IngeniozIT\Router\Exception\RouteNotFound;
 use IngeniozIT\Router\Handler\ConditionHandler;
 use IngeniozIT\Router\Handler\MiddlewaresHandler;
@@ -33,19 +31,17 @@ final class Router implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         if (isset($this->routeGroup->conditions[$this->conditionIndex])) {
-            return $this->executeConditions($request);
+            return $this->handleConditions($request);
         }
 
         if (isset($this->routeGroup->middlewares[$this->middlewareIndex])) {
-            $middlewaresHandler = new MiddlewaresHandler($this->container, $this->routeGroup->middlewares[$this->middlewareIndex++]);
-
-            return $middlewaresHandler->handle($request, $this);
+            return $this->handleNextMiddleware($request);
         }
 
-        return $this->executeRoutables($request);
+        return $this->handleRoutes($request);
     }
 
-    private function executeConditions(ServerRequestInterface $request): ResponseInterface
+    private function handleConditions(ServerRequestInterface $request): ResponseInterface
     {
         $newRequest = $request;
         while (isset($this->routeGroup->conditions[$this->conditionIndex])) {
@@ -64,7 +60,17 @@ final class Router implements RequestHandlerInterface
         return $this->handle($newRequest);
     }
 
-    private function executeRoutables(ServerRequestInterface $request): ResponseInterface
+    private function handleNextMiddleware(ServerRequestInterface $request): ResponseInterface
+    {
+        $middlewaresHandler = new MiddlewaresHandler(
+            $this->container,
+            $this->routeGroup->middlewares[$this->middlewareIndex++]
+        );
+
+        return $middlewaresHandler->handle($request, $this);
+    }
+
+    private function handleRoutes(ServerRequestInterface $request): ResponseInterface
     {
         while (isset($this->routeGroup->routes[$this->routeIndex])) {
             $route = $this->routeGroup->routes[$this->routeIndex++];
@@ -83,20 +89,29 @@ final class Router implements RequestHandlerInterface
                 continue;
             }
 
-            $newRequest = $request;
-            foreach ($route->with as $key => $value) {
-                $newRequest = $newRequest->withAttribute($key, $value);
-            }
-
-            foreach ($matchedParams as $key => $value) {
-                $newRequest = $newRequest->withAttribute($key, $value);
-            }
-
-            $routeHandler = new RouteHandler($this->container, $route->callback);
-            return $routeHandler->handle($newRequest, $this);
+            return $this->handleRouteElement($request, $route, $matchedParams);
         }
 
         return $this->fallback($request);
+    }
+
+    /**
+     * @param array<string, string> $matchedParams
+     */
+    private function handleRouteElement(
+        ServerRequestInterface $request,
+        RouteElement $route,
+        array $matchedParams
+    ): ResponseInterface {
+        foreach ($route->with as $key => $value) {
+            $request = $request->withAttribute($key, $value);
+        }
+        foreach ($matchedParams as $key => $value) {
+            $request = $request->withAttribute($key, $value);
+        }
+
+        $routeHandler = new RouteHandler($this->container, $route->callback);
+        return $routeHandler->handle($request, $this);
     }
 
     private function fallback(ServerRequestInterface $request): ResponseInterface
@@ -109,6 +124,9 @@ final class Router implements RequestHandlerInterface
         return $routeHandler->handle($request, $this);
     }
 
+    /**
+     * @param array<string, scalar> $parameters
+     */
     public function pathTo(string $routeName, array $parameters = []): string
     {
         $route = $this->findNamedRoute($routeName, $parameters, $this->routeGroup);
@@ -120,6 +138,9 @@ final class Router implements RequestHandlerInterface
         return $route;
     }
 
+    /**
+     * @param array<string, scalar> $parameters
+     */
     private function findNamedRoute(string $routeName, array $parameters, RouteGroup $routeGroup): ?string
     {
         foreach ($routeGroup->routes as $route) {
@@ -135,26 +156,7 @@ final class Router implements RequestHandlerInterface
                 continue;
             }
 
-            if (!$route->hasParameters) {
-                return $route->path;
-            }
-
-            $matchedParams = [];
-            preg_match_all('#{(\w+)}#', $route->path, $matches, PREG_SET_ORDER);
-            foreach ($matches as $match) {
-                if (!isset($parameters[$match[1]])) {
-                    throw new MissingRouteParameter($routeName, $match[1]);
-                }
-                if (!preg_match('#^' . $route->parameterPattern($match[1]) . '$#', $parameters[$match[1]])) {
-                    throw new InvalidRouteParameter($routeName, $match[1], $route->parameterPattern($match[1]));
-                }
-                $matchedParams[$match[1]] = $parameters[$match[1]];
-            }
-            $path = $route->path;
-            foreach ($matchedParams as $key => $value) {
-                $path = str_replace('{' . $key . '}', $value, $path);
-            }
-            return $path;
+            return $route->buildPath($parameters);
         }
 
         return null;

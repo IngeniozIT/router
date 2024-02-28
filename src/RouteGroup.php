@@ -6,11 +6,11 @@ namespace IngeniozIT\Router;
 
 final class RouteGroup
 {
-    /** @var Route[]|RouteGroup[] */
+    /** @var RouteElement[]|RouteGroup[] */
     public array $routes;
 
     /**
-     * @param array<Route|RouteGroup> $routes
+     * @param array<RouteElement|RouteGroup> $routes
      * @param mixed[] $middlewares
      * @param mixed[] $conditions
      * @param array<string, string> $where
@@ -26,7 +26,7 @@ final class RouteGroup
         ?string $path = null,
     ) {
         $this->routes = array_map(
-            function (RouteGroup|Route $route) use ($with, $where, $name, $path): RouteGroup|Route {
+            function (RouteGroup|RouteElement $route) use ($with, $where, $name, $path): RouteGroup|RouteElement {
                 if ($route instanceof RouteGroup) {
                     return new RouteGroup(
                         $route->routes,
@@ -39,7 +39,7 @@ final class RouteGroup
                     );
                 }
 
-                return new Route(
+                return new RouteElement(
                     $route->method,
                     $path . $route->path,
                     $route->callback,

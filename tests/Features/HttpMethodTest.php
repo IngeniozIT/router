@@ -3,6 +3,7 @@
 namespace IngeniozIT\Router\Tests\Features;
 
 use IngeniozIT\Router\Route;
+use IngeniozIT\Router\RouteElement;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\RouterCase;
 use Psr\Http\Message\ResponseInterface;
@@ -14,7 +15,7 @@ final class HttpMethodTest extends RouterCase
      */
     public function testRouteMatchesRequestsBasedOnMethod(string $method, callable $routeCallable): void
     {
-        /** @var Route $route */
+        /** @var RouteElement $route */
         $route = $routeCallable('/', static fn(): ResponseInterface => self::response('OK'));
         $request = self::serverRequest($method, '/');
 
