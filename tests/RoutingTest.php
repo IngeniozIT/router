@@ -6,6 +6,7 @@ use IngeniozIT\Router\Exception\EmptyRouteStack;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -101,9 +102,7 @@ final class RoutingTest extends RouterCase
         self::assertEquals('barbaz', (string)$response->getBody());
     }
 
-    /**
-     * @dataProvider providerRouteGroupsWithCustomParameters
-     */
+    #[DataProvider('providerRouteGroupsWithCustomParameters')]
     public function testRoutesCanUseCustomPathParameters(RouteGroup $routeGroup): void
     {
         $matchingRequest = self::serverRequest('GET', '/123');

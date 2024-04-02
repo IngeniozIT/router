@@ -10,6 +10,7 @@ use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;
 use IngeniozIT\Router\Tests\Utils\TestHandler;
 use IngeniozIT\Router\Tests\Utils\TestMiddleware;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -17,9 +18,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 final class CallbackTest extends RouterCase
 {
-    /**
-     * @dataProvider providerCallbacks
-     */
+    #[DataProvider('providerCallbacks')]
     public function testRouterCanExecuteACallback(Closure|MiddlewareInterface|RequestHandlerInterface|string $callback): void
     {
         $routeGroup = new RouteGroup(routes: [
@@ -55,9 +54,7 @@ final class CallbackTest extends RouterCase
         ];
     }
 
-    /**
-     * @dataProvider providerInvalidHandlers
-     */
+    #[DataProvider('providerInvalidHandlers')]
     public function testRouterCannotExecuteAnInvalidCallback(mixed $callback): void
     {
         $routeGroup = new RouteGroup(routes: [

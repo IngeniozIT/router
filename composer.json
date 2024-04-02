@@ -25,8 +25,8 @@
         "infection/infection": "*",
         "phpmd/phpmd": "*",
         "rector/rector": "*",
-        "ingenioz-it/http-message": "^2.0",
-        "ingenioz-it/edict": "^3.1"
+        "ingenioz-it/http-message": "*",
+        "ingenioz-it/edict": "*"
     },
     "autoload": {
         "psr-4": {

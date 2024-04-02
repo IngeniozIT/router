@@ -6,13 +6,12 @@ use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteElement;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 
 final class HttpMethodTest extends RouterCase
 {
-    /**
-     * @dataProvider providerMethodsAndRoutes
-     */
+    #[DataProvider('providerMethodsAndRoutes')]
     public function testRoutesMatchRequestsBasedOnMethod(string $method, callable $routeCallable): void
     {
         /** @var RouteElement $route */
@@ -40,9 +39,7 @@ final class HttpMethodTest extends RouterCase
         ];
     }
 
-    /**
-     * @dataProvider providerRouteMethods
-     */
+    #[DataProvider('providerRouteMethods')]
     public function testRoutesCanMatchAnyMethod(string $method): void
     {
         $route = Route::any('/', static fn(): ResponseInterface => self::response('OK'));

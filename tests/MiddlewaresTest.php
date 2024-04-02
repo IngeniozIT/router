@@ -9,6 +9,7 @@ use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;
 use IngeniozIT\Router\Tests\Utils\TestMiddleware;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -17,9 +18,7 @@ use function IngeniozIT\Edict\value;
 
 final class MiddlewaresTest extends RouterCase
 {
-    /**
-     * @dataProvider providerMiddlewares
-     */
+    #[DataProvider('providerMiddlewares')]
     public function testRouteGroupsCanHaveMiddlewares(mixed $middleware, string $expectedResponse): void
     {
         $routeGroup = new RouteGroup(
@@ -71,9 +70,7 @@ final class MiddlewaresTest extends RouterCase
         self::assertEquals('TEST', (string) $response->getBody());
     }
 
-    /**
-     * @dataProvider providerInvalidMiddlewares
-     */
+    #[DataProvider('providerInvalidMiddlewares')]
     public function testRouterCannotExecuteInvalidMiddlewares(mixed $middleware): void
     {
         $routeGroup = new RouteGroup(

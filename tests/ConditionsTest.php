@@ -8,14 +8,13 @@ use IngeniozIT\Router\Exception\InvalidRouteCondition;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 final class ConditionsTest extends RouterCase
 {
-    /**
-     * @dataProvider providerConditions
-     */
+    #[DataProvider('providerConditions')]
     public function testRouteGroupsCanHaveConditions(Closure $condition, string $expectedResponse): void
     {
         $routeGroup = new RouteGroup(
@@ -88,9 +87,7 @@ final class ConditionsTest extends RouterCase
         self::assertEquals("'bar'", (string)$response->getBody());
     }
 
-    /**
-     * @dataProvider providerInvalidConditions
-     */
+    #[DataProvider('providerInvalidConditions')]
     public function testRouterCannotExecuteInvalidConditions(mixed $condition): void
     {
         $routeGroup = new RouteGroup(
