@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace IngeniozIT\Router;
 
+use IngeniozIT\Router\Route\RouteElement;
+
 final readonly class Route
 {
     public const GET = 0b0000001;
@@ -111,7 +113,7 @@ final readonly class Route
      */
     public static function some(array $methods, string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): RouteElement
     {
-        $method = array_reduce($methods, fn($carry, $methodString) => $carry | self::METHODS[strtoupper($methodString)], 0);
+        $method = array_reduce($methods, static fn($carry, $methodString): int => $carry | self::METHODS[strtoupper($methodString)], 0);
 
         return new RouteElement($method, $path, $callback, $where, $with, $name);
     }

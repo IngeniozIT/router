@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace IngeniozIT\Router\Handler;
+namespace IngeniozIT\Router\Condition;
 
 use Closure;
-use IngeniozIT\Router\Exception\InvalidRouteCondition;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -20,7 +19,7 @@ readonly final class ConditionHandler
         $handler = is_string($callback) ? $this->container->get($callback) : $callback;
 
         if (!is_callable($handler)) {
-            throw new InvalidRouteCondition('Invalid condition handler');
+            throw new InvalidConditionHandler($handler);
         }
 
         $this->handler = $handler(...);
@@ -33,10 +32,10 @@ readonly final class ConditionHandler
     {
         $result = ($this->handler)($request);
 
-        if ($result === false || is_array($result)) {
-            return $result;
+        if ($result !== false && !is_array($result)) {
+            throw new InvalidConditionResponse($result);
         }
 
-        throw new InvalidRouteCondition('Condition must either return an array or false.');
+        return $result;
     }
 }

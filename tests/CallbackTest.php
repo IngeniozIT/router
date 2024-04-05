@@ -4,8 +4,9 @@ namespace IngeniozIT\Router\Tests;
 
 use Closure;
 use IngeniozIT\Http\Message\UriFactory;
-use IngeniozIT\Router\Exception\InvalidRouteHandler;
 use IngeniozIT\Router\Route;
+use IngeniozIT\Router\Route\InvalidRouteHandler;
+use IngeniozIT\Router\Route\InvalidRouteResponse;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;
 use IngeniozIT\Router\Tests\Utils\TestHandler;
@@ -15,7 +16,11 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Throwable;
 
+/**
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ */
 final class CallbackTest extends RouterCase
 {
     #[DataProvider('providerCallbacks')]
@@ -54,26 +59,41 @@ final class CallbackTest extends RouterCase
         ];
     }
 
+    /**
+     * @param class-string<Throwable> $expectedException
+     */
     #[DataProvider('providerInvalidHandlers')]
-    public function testRouterCannotExecuteAnInvalidCallback(mixed $callback): void
-    {
+    public function testRouterCannotExecuteAnInvalidCallback(
+        mixed $callback,
+        string $expectedException,
+        string $expectedMessage,
+    ): void {
         $routeGroup = new RouteGroup(routes: [
             Route::get(path: '/', callback: $callback),
         ]);
         $request = self::serverRequest('GET', '/');
 
-        self::expectException(InvalidRouteHandler::class);
+        self::expectException($expectedException);
+        self::expectExceptionMessage($expectedMessage);
         $this->router($routeGroup)->handle($request);
     }
 
     /**
-     * @return array<string, array{0: mixed}>
+     * @return array<string, array{mixed, class-string<Throwable>, string}>
      */
     public static function providerInvalidHandlers(): array
     {
         return [
-            'not a handler' => [UriFactory::class],
-            'handler that does not return a PSR response' => [static fn(): array => ['foo' => 'bar']],
+            'not a handler' => [
+                UriFactory::class,
+                InvalidRouteHandler::class,
+                'Route handler must be a PSR Middleware, a PSR RequestHandler or a callable, IngeniozIT\Http\Message\UriFactory given.',
+            ],
+            'handler that does not return a PSR response' => [
+                static fn(): array => ['foo' => 'bar'],
+                InvalidRouteResponse::class,
+                'Route must return a PSR Response, array given.',
+            ],
         ];
     }
 }

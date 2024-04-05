@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use Rector\CodingStyle\Rector\Encapsed\EncapsedStringsToSprintfRector;
 use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\{LevelSetList, SetList};
+use Rector\Strict\Rector\BooleanNot\BooleanInBooleanNotRuleFixerRector;
 
 return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->paths([
@@ -22,5 +24,10 @@ return static function (RectorConfig $rectorConfig): void {
         SetList::TYPE_DECLARATION,
         SetList::EARLY_RETURN,
         SetList::INSTANCEOF,
+    ]);
+
+    $rectorConfig->skip([
+        EncapsedStringsToSprintfRector::class,
+        BooleanInBooleanNotRuleFixerRector::class,
     ]);
 };

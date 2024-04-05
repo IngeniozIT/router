@@ -2,20 +2,23 @@
 
 declare(strict_types=1);
 
-namespace IngeniozIT\Router;
+namespace IngeniozIT\Router\Route;
 
-use IngeniozIT\Router\Exception\InvalidRouteParameter;
-use IngeniozIT\Router\Exception\MissingRouteParameters;
+use IngeniozIT\Router\Route;
 use Psr\Http\Message\ServerRequestInterface;
 
 final readonly class RouteElement
 {
     public string $path;
+
     public bool $hasParameters;
+
     /** @var array<string, string> */
     public array $where;
+
     /** @var string[] */
     public array $parameters;
+
     public ?string $regex;
 
     /**
@@ -42,6 +45,7 @@ final readonly class RouteElement
     private function extractPatterns(array $where, string $path): array
     {
         $parameters = [];
+
         if (preg_match_all('#{(\w+)(?::([^}]+))?}#', $path, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
                 $parameters[] = $match[1];
@@ -51,6 +55,7 @@ final readonly class RouteElement
                 }
             }
         }
+
         return [$parameters, $where, $path];
     }
 
@@ -123,10 +128,11 @@ final readonly class RouteElement
                 $path = str_replace('{' . $parameter . '}', (string)$value, $path);
                 continue;
             }
+
             $queryParameters[$parameter] = $value;
         }
 
-        return $path . ($queryParameters ? '?' . http_build_query($queryParameters) : '');
+        return $path . ($queryParameters !== [] ? '?' . http_build_query($queryParameters) : '');
     }
 
     /**
@@ -141,7 +147,7 @@ final readonly class RouteElement
         }
 
         foreach ($this->parameters as $parameter) {
-            if (!preg_match('#^' . $this->parameterPattern($parameter) . '$#', (string)$parameters[$parameter])) {
+            if (!preg_match('#^' . $this->parameterPattern($parameter) . '$#', (string) $parameters[$parameter])) {
                 throw new InvalidRouteParameter($this->name ?? '', $parameter, $this->parameterPattern($parameter));
             }
         }

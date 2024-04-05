@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace IngeniozIT\Router\Handler;
+namespace IngeniozIT\Router\Route;
 
 use Closure;
-use IngeniozIT\Router\Exception\InvalidRouteHandler;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -27,7 +26,7 @@ readonly final class RouteHandler
             && !($handler instanceof RequestHandlerInterface)
             && !is_callable($handler)
         ) {
-            throw new InvalidRouteHandler('Route handler must be a PSR Middleware, a PSR RequestHandler or a callable.');
+            throw new InvalidRouteHandler($handler);
         }
 
         $this->handler = is_callable($handler) ? $handler(...) : $handler;
@@ -38,7 +37,7 @@ readonly final class RouteHandler
         $result = $this->executeHandler($request, $handler);
 
         if (!$result instanceof ResponseInterface) {
-            throw new InvalidRouteHandler('Route handler must return a PSR Response.');
+            throw new InvalidRouteResponse($result);
         }
 
         return $result;

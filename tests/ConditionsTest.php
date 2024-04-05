@@ -4,13 +4,15 @@ namespace IngeniozIT\Router\Tests;
 
 use Closure;
 use IngeniozIT\Http\Message\UriFactory;
-use IngeniozIT\Router\Exception\InvalidRouteCondition;
+use IngeniozIT\Router\Condition\InvalidConditionHandler;
+use IngeniozIT\Router\Condition\InvalidConditionResponse;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Throwable;
 
 final class ConditionsTest extends RouterCase
 {
@@ -25,8 +27,9 @@ final class ConditionsTest extends RouterCase
         );
         $request = self::serverRequest('GET', '/');
 
-        $response = $this->router($routeGroup, static fn(): ResponseInterface =>
-        self::response('TEST'))->handle($request);
+        $response = $this->router($routeGroup, static fn(): ResponseInterface => self::response('TEST'))->handle(
+            $request
+        );
 
         self::assertEquals($expectedResponse, (string)$response->getBody());
     }
@@ -61,8 +64,9 @@ final class ConditionsTest extends RouterCase
         );
         $request = self::serverRequest('GET', '/');
 
-        $response = $this->router($routeGroup, static fn(): ResponseInterface =>
-        self::response('TEST'))->handle($request);
+        $response = $this->router($routeGroup, static fn(): ResponseInterface => self::response('TEST'))->handle(
+            $request
+        );
 
         self::assertEquals('TEST', (string)$response->getBody());
     }
@@ -73,7 +77,9 @@ final class ConditionsTest extends RouterCase
             routes: [
                 Route::get(
                     path: '/',
-                    callback: static fn(ServerRequestInterface $request): ResponseInterface => self::response(var_export($request->getAttribute('foo'), true))
+                    callback: static fn(ServerRequestInterface $request): ResponseInterface => self::response(
+                        var_export($request->getAttribute('foo'), true)
+                    )
                 ),
             ],
             conditions: [
@@ -87,9 +93,15 @@ final class ConditionsTest extends RouterCase
         self::assertEquals("'bar'", (string)$response->getBody());
     }
 
+    /**
+     * @param class-string<Throwable> $expectedException
+     */
     #[DataProvider('providerInvalidConditions')]
-    public function testRouterCannotExecuteInvalidConditions(mixed $condition): void
-    {
+    public function testRouterCannotExecuteInvalidConditions(
+        mixed $condition,
+        string $expectedException,
+        string $expectedMessage,
+    ): void {
         $routeGroup = new RouteGroup(
             routes: [
                 Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST')),
@@ -98,18 +110,27 @@ final class ConditionsTest extends RouterCase
         );
         $request = self::serverRequest('GET', '/');
 
-        self::expectException(InvalidRouteCondition::class);
+        self::expectException($expectedException);
+        self::expectExceptionMessage($expectedMessage);
         $this->router($routeGroup)->handle($request);
     }
 
     /**
-     * @return array<string, array{0: mixed}>
+     * @return array<string, array{mixed, class-string<Throwable>, string}>
      */
     public static function providerInvalidConditions(): array
     {
         return [
-            'not a callable' => [UriFactory::class],
-            'callable that does not return bool or array' => [static fn(): bool => true],
+            'not a callable' => [
+                UriFactory::class,
+                InvalidConditionHandler::class,
+                'Condition handler must be a callable, IngeniozIT\Http\Message\UriFactory given.',
+            ],
+            'callable that does not return bool or array' => [
+                static fn(): bool => true,
+                InvalidConditionResponse::class,
+                'Condition must either return an array or false, bool given.',
+            ],
         ];
     }
 }

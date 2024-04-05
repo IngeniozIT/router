@@ -2,10 +2,10 @@
 
 namespace IngeniozIT\Router\Tests;
 
-use IngeniozIT\Router\Exception\InvalidRouteParameter;
-use IngeniozIT\Router\Exception\MissingRouteParameters;
-use IngeniozIT\Router\Exception\RouteNotFound;
 use IngeniozIT\Router\Route;
+use IngeniozIT\Router\Route\InvalidRouteParameter;
+use IngeniozIT\Router\Route\MissingRouteParameters;
+use IngeniozIT\Router\Route\RouteNotFound;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;
 
@@ -72,6 +72,7 @@ final class NameTest extends RouterCase
         $router = $this->router(new RouteGroup([$route]));
 
         self::expectException(RouteNotFound::class);
+        self::expectExceptionMessage("Route inexisting_route_name not found.");
         $router->pathTo('inexisting_route_name');
     }
 
@@ -81,7 +82,7 @@ final class NameTest extends RouterCase
         $router = $this->router(new RouteGroup([$route]));
 
         self::expectException(MissingRouteParameters::class);
-        self::expectExceptionMessage("Missing parameters foo for route with name 'route_name'.");
+        self::expectExceptionMessage("Missing parameters foo for route route_name.");
         $router->pathTo('route_name', ['bar' => '42']);
     }
 
@@ -91,7 +92,7 @@ final class NameTest extends RouterCase
         $router = $this->router(new RouteGroup([$route]));
 
         self::expectException(InvalidRouteParameter::class);
-        self::expectExceptionMessage("Parameter 'foo' for route with name 'route_name' does not match the pattern '\d+'.");
+        self::expectExceptionMessage("Parameter foo for route route_name does not match the pattern \d+.");
         $router->pathTo('route_name', ['foo' => 'bar']);
     }
 }

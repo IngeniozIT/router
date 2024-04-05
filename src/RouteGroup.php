@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace IngeniozIT\Router;
 
+use IngeniozIT\Router\Route\RouteElement;
+
 final class RouteGroup
 {
     /** @var RouteElement[]|RouteGroup[] */
@@ -20,40 +22,43 @@ final class RouteGroup
         array $routes,
         public array $middlewares = [],
         public array $conditions = [],
-        array $where = [],
-        array $with = [],
-        ?string $name = null,
-        ?string $path = null,
+        public array $where = [],
+        public array $with = [],
+        public ?string $name = null,
+        public ?string $path = null,
     ) {
-        $this->routes = array_map(
-            function (RouteGroup|RouteElement $route) use ($with, $where, $name, $path): RouteGroup|RouteElement {
-                if ($route instanceof RouteGroup) {
-                    return new RouteGroup(
-                        $route->routes,
-                        $route->middlewares,
-                        $route->conditions,
-                        $where,
-                        $with,
-                        $this->concatenatedName($name),
-                        $path,
-                    );
-                }
-
-                return new RouteElement(
-                    $route->method,
-                    $path . $route->path,
-                    $route->callback,
-                    [...$where, ...$route->where],
-                    [...$with, ...$route->with],
-                    name: !empty($route->name) ? $this->concatenatedName($name) . $route->name : null,
-                );
-            },
-            $routes,
-        );
+        $this->routes = array_map($this->addRouteGroupInformationToRoute(...), $routes);
     }
 
-    private function concatenatedName(?string $name): ?string
+    private function addRouteGroupInformationToRoute(RouteGroup|RouteElement $route): RouteGroup|RouteElement
     {
-        return $name === null || $name === '' ? $name : $name . '.';
+        return $route instanceof RouteGroup ?
+            new RouteGroup(
+                $route->routes,
+                $route->middlewares,
+                $route->conditions,
+                $this->where,
+                $this->with,
+                $this->concatenatedNameForRouteGroup(),
+                $this->path,
+            ) :
+            new RouteElement(
+                $route->method,
+                $this->path . $route->path,
+                $route->callback,
+                [...$this->where, ...$route->where],
+                [...$this->with, ...$route->with],
+                $this->concatenatedNameForRouteElement($route->name),
+            );
+    }
+
+    private function concatenatedNameForRouteElement(?string $routeName): ?string
+    {
+        return $routeName === null ? null : $this->concatenatedNameForRouteGroup() . $routeName;
+    }
+
+    private function concatenatedNameForRouteGroup(): ?string
+    {
+        return $this->name === null ? null : $this->name . '.';
     }
 }

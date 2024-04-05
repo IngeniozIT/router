@@ -3,7 +3,7 @@
 namespace IngeniozIT\Router\Tests;
 
 use IngeniozIT\Router\Route;
-use IngeniozIT\Router\RouteElement;
+use IngeniozIT\Router\Route\RouteElement;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;
 use PHPUnit\Framework\Attributes\DataProvider;

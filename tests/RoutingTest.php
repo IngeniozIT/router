@@ -2,7 +2,7 @@
 
 namespace IngeniozIT\Router\Tests;
 
-use IngeniozIT\Router\Exception\EmptyRouteStack;
+use IngeniozIT\Router\EmptyRouteStack;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;
@@ -181,6 +181,7 @@ final class RoutingTest extends RouterCase
         $request = self::serverRequest('GET', '/baz');
 
         self::expectException(EmptyRouteStack::class);
+        self::expectExceptionMessage('No routes left to process.');
         $this->router($routeGroup)->handle($request);
     }
 

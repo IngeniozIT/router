@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace IngeniozIT\Router;
 
-use IngeniozIT\Router\Exception\EmptyRouteStack;
-use IngeniozIT\Router\Exception\RouteNotFound;
-use IngeniozIT\Router\Handler\ConditionHandler;
-use IngeniozIT\Router\Handler\MiddlewaresHandler;
-use IngeniozIT\Router\Handler\RouteHandler;
+use IngeniozIT\Router\Condition\ConditionHandler;
+use IngeniozIT\Router\Middleware\MiddlewareHandler;
+use IngeniozIT\Router\Route\RouteElement;
+use IngeniozIT\Router\Route\RouteHandler;
+use IngeniozIT\Router\Route\RouteNotFound;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use Psr\Http\Server\RequestHandlerInterface;
@@ -62,7 +62,7 @@ final class Router implements RequestHandlerInterface
 
     private function handleNextMiddleware(ServerRequestInterface $request): ResponseInterface
     {
-        $middlewaresHandler = new MiddlewaresHandler(
+        $middlewaresHandler = new MiddlewareHandler(
             $this->container,
             $this->routeGroup->middlewares[$this->middlewareIndex++]
         );
@@ -106,6 +106,7 @@ final class Router implements RequestHandlerInterface
         foreach ($route->with as $key => $value) {
             $request = $request->withAttribute($key, $value);
         }
+
         foreach ($matchedParams as $key => $value) {
             $request = $request->withAttribute($key, $value);
         }
@@ -117,7 +118,7 @@ final class Router implements RequestHandlerInterface
     private function fallback(ServerRequestInterface $request): ResponseInterface
     {
         if ($this->fallback === null) {
-            throw new EmptyRouteStack('No routes left to process.');
+            throw new EmptyRouteStack();
         }
 
         $routeHandler = new RouteHandler($this->container, $this->fallback);
@@ -129,34 +130,25 @@ final class Router implements RequestHandlerInterface
      */
     public function pathTo(string $routeName, array $parameters = []): string
     {
-        $route = $this->findNamedRoute($routeName, $parameters, $this->routeGroup);
+        $route = $this->findNamedRoute($routeName, $this->routeGroup);
 
-        if (!$route) {
-            throw new RouteNotFound("Route with name '$routeName' not found.");
+        if (!$route instanceof RouteElement) {
+            throw new RouteNotFound($routeName);
         }
 
-        return $route;
+        return $route->buildPath($parameters);
     }
 
-    /**
-     * @param array<string, scalar> $parameters
-     */
-    private function findNamedRoute(string $routeName, array $parameters, RouteGroup $routeGroup): ?string
+    private function findNamedRoute(string $routeName, RouteGroup $routeGroup): ?RouteElement
     {
         foreach ($routeGroup->routes as $route) {
             if ($route instanceof RouteGroup) {
-                $foundRoute = $this->findNamedRoute($routeName, $parameters, $route);
-                if ($foundRoute === null) {
-                    continue;
-                }
-                return $foundRoute;
+                $route = $this->findNamedRoute($routeName, $route);
             }
 
-            if ($route->name !== $routeName) {
-                continue;
+            if ($route?->name === $routeName) {
+                return $route;
             }
-
-            return $route->buildPath($parameters);
         }
 
         return null;
