@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
-namespace IngeniozIT\Router\Route;
+namespace IngeniozIT\Router\Route\Exception;
 
 use DomainException;
+use IngeniozIT\Router\Route\RouteException;
+
+use function implode;
 
 final class MissingRouteParameters extends DomainException implements RouteException
 {

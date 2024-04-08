@@ -4,8 +4,8 @@ namespace IngeniozIT\Router\Tests;
 
 use Exception;
 use IngeniozIT\Http\Message\UriFactory;
-use IngeniozIT\Router\Middleware\InvalidMiddlewareHandler;
-use IngeniozIT\Router\Middleware\InvalidMiddlewareResponse;
+use IngeniozIT\Router\Middleware\Exception\InvalidMiddlewareHandler;
+use IngeniozIT\Router\Middleware\Exception\InvalidMiddlewareResponse;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;

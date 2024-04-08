@@ -4,8 +4,8 @@ namespace IngeniozIT\Router\Tests;
 
 use Closure;
 use IngeniozIT\Http\Message\UriFactory;
-use IngeniozIT\Router\Condition\InvalidConditionHandler;
-use IngeniozIT\Router\Condition\InvalidConditionResponse;
+use IngeniozIT\Router\Condition\Exception\InvalidConditionHandler;
+use IngeniozIT\Router\Condition\Exception\InvalidConditionResponse;
 use IngeniozIT\Router\Route;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;

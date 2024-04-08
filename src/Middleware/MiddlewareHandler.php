@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace IngeniozIT\Router\Middleware;
 
 use Closure;
+use IngeniozIT\Router\Middleware\Exception\InvalidMiddlewareHandler;
+use IngeniozIT\Router\Middleware\Exception\InvalidMiddlewareResponse;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+
+use function is_callable;
+use function is_string;
 
 readonly final class MiddlewareHandler
 {

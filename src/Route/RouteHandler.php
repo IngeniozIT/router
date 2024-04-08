@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace IngeniozIT\Router\Route;
 
 use Closure;
+use IngeniozIT\Router\Route\Exception\InvalidRouteHandler;
+use IngeniozIT\Router\Route\Exception\InvalidRouteResponse;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+
+use function is_callable;
+use function is_string;
 
 readonly final class RouteHandler
 {

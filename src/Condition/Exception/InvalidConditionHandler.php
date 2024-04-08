@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace IngeniozIT\Router\Condition;
+namespace IngeniozIT\Router\Condition\Exception;
 
+use IngeniozIT\Router\Condition\ConditionException;
 use InvalidArgumentException;
 
 final class InvalidConditionHandler extends InvalidArgumentException implements ConditionException

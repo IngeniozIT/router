@@ -5,7 +5,21 @@ declare(strict_types=1);
 namespace IngeniozIT\Router\Route;
 
 use IngeniozIT\Router\Route;
+use IngeniozIT\Router\Route\Exception\InvalidRouteParameter;
+use IngeniozIT\Router\Route\Exception\MissingRouteParameters;
 use Psr\Http\Message\ServerRequestInterface;
+
+use function array_diff;
+use function array_filter;
+use function array_intersect;
+use function array_keys;
+use function count;
+use function http_build_query;
+use function in_array;
+use function preg_match;
+use function preg_match_all;
+use function str_contains;
+use function str_replace;
 
 final readonly class RouteElement
 {
@@ -147,7 +161,7 @@ final readonly class RouteElement
         }
 
         foreach ($this->parameters as $parameter) {
-            if (!preg_match('#^' . $this->parameterPattern($parameter) . '$#', (string) $parameters[$parameter])) {
+            if (!preg_match('#^' . $this->parameterPattern($parameter) . '$#', (string)$parameters[$parameter])) {
                 throw new InvalidRouteParameter($this->name ?? '', $parameter, $this->parameterPattern($parameter));
             }
         }

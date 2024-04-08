@@ -6,6 +6,8 @@ namespace IngeniozIT\Router;
 
 use IngeniozIT\Router\Route\RouteElement;
 
+use function array_map;
+
 final class RouteGroup
 {
     /** @var RouteElement[]|RouteGroup[] */

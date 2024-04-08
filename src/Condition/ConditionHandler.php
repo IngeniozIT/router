@@ -5,8 +5,14 @@ declare(strict_types=1);
 namespace IngeniozIT\Router\Condition;
 
 use Closure;
+use IngeniozIT\Router\Condition\Exception\InvalidConditionHandler;
+use IngeniozIT\Router\Condition\Exception\InvalidConditionResponse;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
+
+use function is_array;
+use function is_callable;
+use function is_string;
 
 readonly final class ConditionHandler
 {

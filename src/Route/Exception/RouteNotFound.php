@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace IngeniozIT\Router\Route;
+namespace IngeniozIT\Router\Route\Exception;
 
 use DomainException;
+use IngeniozIT\Router\Route\RouteException;
 
 final class RouteNotFound extends DomainException implements RouteException
 {

@@ -3,9 +3,9 @@
 namespace IngeniozIT\Router\Tests;
 
 use IngeniozIT\Router\Route;
-use IngeniozIT\Router\Route\InvalidRouteParameter;
-use IngeniozIT\Router\Route\MissingRouteParameters;
-use IngeniozIT\Router\Route\RouteNotFound;
+use IngeniozIT\Router\Route\Exception\InvalidRouteParameter;
+use IngeniozIT\Router\Route\Exception\MissingRouteParameters;
+use IngeniozIT\Router\Route\Exception\RouteNotFound;
 use IngeniozIT\Router\RouteGroup;
 use IngeniozIT\Router\Tests\Utils\RouterCase;
 

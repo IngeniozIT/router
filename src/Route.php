@@ -6,6 +6,9 @@ namespace IngeniozIT\Router;
 
 use IngeniozIT\Router\Route\RouteElement;
 
+use function array_reduce;
+use function strtoupper;
+
 final readonly class Route
 {
     public const GET = 0b0000001;

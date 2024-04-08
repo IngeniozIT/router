@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace IngeniozIT\Router\Route;
+namespace IngeniozIT\Router\Route\Exception;
 
 use UnexpectedValueException;
 
