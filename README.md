@@ -67,7 +67,7 @@ $response = $router->handle($request);
 
 The simplest route consists of a path and a handler.
 
-The path is a string, and the handler is a callable that will be executed when the route is matched. The handler returns a PSR-7 ResponseInterface.
+The path is a string, and the handler is a callable that will be executed when the route is matched. The handler must return a PSR-7 ResponseInterface.
 
 ```php
 Route::get('/hello', fn() => new Response('Hello, world!'));
@@ -75,7 +75,7 @@ Route::get('/hello', fn() => new Response('Hello, world!'));
 
 ### Organizing routes
 
-Route groups allow you to group several routes together.  
+Route groups are used to contain routes definitions.  
 They also allows you to visually organize your routes according to your application's logic.
 
 This is useful when you want to apply the same conditions, middlewares, or attributes to several routes at once (as we will see later).
@@ -102,7 +102,7 @@ new RouteGroup([
 
 ### HTTP methods
 
-You can specify the HTTP method that the route should match by using the corresponding method on the Route class:
+You can specify the HTTP method that the route should match:
 
 ```php
 Route::get('/hello', MyHandler::class);
@@ -180,7 +180,7 @@ $routes = new RouteGroup(
 #### Closures
 
 The simplest way to define a route handler is to use a closure.  
-The closure should return a PSR-7 ResponseInterface.
+The closure must return a PSR-7 ResponseInterface.
 
 ```php
 Route::get('/hello', fn() => new Response('Hello, world!'));
@@ -231,7 +231,7 @@ class MyHandler implements MiddlewareInterface
 {
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (someResourceDoesNotExist()) {
+        if (resourceDoesNotExist()) {
             // We don't want this handler to continue processing the request,
             // so we pass the responsability to the next handler
             return $handler->handle($request);
@@ -242,14 +242,16 @@ class MyHandler implements MiddlewareInterface
 }
 
 $routes = new RouteGroup([
-    Route::get('/hello', fn() => new MyHandler()), // This handler will be called first
-    Route::get('/hello', fn() => new Response('Hello, world!')), // This handler will be called second
+    // This handler will be called first
+    Route::get('/{ressource}', fn() => new MyHandler()),
+    // This handler will be called next
+    Route::get('/{ressource}', fn() => new Response('Hello, world!')),
 ]);
 ```
 
 #### Dependency injection
 
-Instead of using a closure or a class instance as a handler, you can use a class name. The router will then resolve the class using its PSR container.
+Instead of using a closure or a class instance, your handler can be a class name. The router will then resolve the class using the PSR container you injected into the router.
 
 ```php
 Route::get('/hello', MyHandler::class);
@@ -276,7 +278,7 @@ class MyHandler implements RequestHandlerInterface
 Route::get('/hello', MyHandler::class, with: ['name' => 'world']);
 ```
 
-Attributes can also be defined globally for all routes inside a group:
+Attributes can also be defined globally for all the routes inside a group:
 
 ```php
 $routes = new RouteGroup(
