@@ -4,11 +4,18 @@ A PHP Router.
 
 ## Disclaimer
 
-In order to ensure that this package is easy to integrate into your app, it is built around the **PHP Standard Recommendations** : it takes in a [PSR-7 Server Request](https://www.php-fig.org/psr/psr-7/#321-psrhttpmessageserverrequestinterface) and returns a [PSR-7 Response](https://www.php-fig.org/psr/psr-7/#33-psrhttpmessageresponseinterface). It also uses a [PSR-11 Container](https://www.php-fig.org/psr/psr-11/) (such as [EDICT](https://github.com/IngeniozIT/psr-container-edict)) to resolve the route handlers.
+In order to ensure that this package is easy to integrate into your app, it is built around the **PHP Standard
+Recommendations** : it takes in
+a [PSR-7 Server Request](https://www.php-fig.org/psr/psr-7/#321-psrhttpmessageserverrequestinterface) and returns
+a [PSR-7 Response](https://www.php-fig.org/psr/psr-7/#33-psrhttpmessageresponseinterface). It also uses
+a [PSR-11 Container](https://www.php-fig.org/psr/psr-11/) (such
+as [EDICT](https://github.com/IngeniozIT/psr-container-edict)) to resolve the route handlers.
 
-It is inspired by routers from well-known frameworks *(did anyone say Laravel ?)* aswell as some home-made routers used internally by some major companies.
+It is inspired by routers from well-known frameworks *(did anyone say Laravel ?)* aswell as some home-made routers used
+internally by some major companies.
 
-It is build with quality in mind : readability, immutability, no global states, 100% code coverage, 100% mutation testing score, and validation from various static analysis tools at the highest level.
+It is build with quality in mind : readability, immutability, no global states, 100% code coverage, 100% mutation
+testing score, and validation from various static analysis tools at the highest level.
 
 ## About
 
@@ -33,6 +40,7 @@ composer require ingenioz-it/router
 ### Overview
 
 Here is the whole process of using this router :
+
 - Create your routes
 - Instantiate the router
 - Handle the request:
@@ -67,7 +75,8 @@ $response = $router->handle($request);
 
 The simplest route consists of a path and a handler.
 
-The path is a string, and the handler is a callable that will be executed when the route is matched. The handler must return a PSR-7 ResponseInterface.
+The path is a string, and the handler is a callable that will be executed when the route is matched. The handler must
+return a PSR-7 ResponseInterface.
 
 ```php
 Route::get('/hello', fn() => new Response('Hello, world!'));
@@ -78,7 +87,8 @@ Route::get('/hello', fn() => new Response('Hello, world!'));
 Route groups are used to contain routes definitions.  
 They also allows you to visually organize your routes according to your application's logic.
 
-This is useful when you want to apply the same conditions, middlewares, or attributes to several routes at once (as we will see later).
+This is useful when you want to apply the same conditions, middlewares, or attributes to several routes at once (as we
+will see later).
 
 ```php
 new RouteGroup([
@@ -220,7 +230,8 @@ Route::get('/hello', new MyHandler());
 
 #### MiddlewareInterface
 
-Sometimes, you might want a handler to be able to "refuse" to handle the request, and pass it to the next handler in the chain.
+Sometimes, you might want a handler to be able to "refuse" to handle the request, and pass it to the next handler in the
+chain.
 
 This is done by using a PSR MiddlewareInterface as a route handler :
 
@@ -251,13 +262,15 @@ $routes = new RouteGroup([
 
 #### Dependency injection
 
-Instead of using a closure or a class instance, your handler can be a class name. The router will then resolve the class using the PSR container you injected into the router.
+Instead of using a closure or a class instance, your handler can be a class name. The router will then resolve the class
+using the PSR container you injected into the router.
 
 ```php
 Route::get('/hello', MyHandler::class);
 ```
 
-*The router will resolve this handler by calling `get(MyHandler::class)` on the container. This means that you can use any value that the container can resolve into a valid route handler.*
+*The router will resolve this handler by calling `get(MyHandler::class)` on the container. This means that you can use
+any value that the container can resolve into a valid route handler.*
 
 ### Additional attributes
 
@@ -292,8 +305,108 @@ $routes = new RouteGroup(
 
 ### Middlewares
 
+Middlewares are classes that can modify the request and/or the response before and after the route handler is called.
+
+They can be applied to a route group.
+
+```php
+$routes = new RouteGroup(
+    [
+        Route::get('/hello', MyHandler::class),
+    ],
+    middlewares: [
+        MyMiddleware::class,
+        MyOtherMiddleware::class,
+    ],
+);
+```
+
+The middleware class must implement the PSR `\Psr\Http\Server\MiddlewareInterface` interface.
+
 ### Conditions
+
+Conditions are callables that will determine if a route group should be parsed.
+
+```php
+// This one will be parsed
+$routes = new RouteGroup(
+    [
+        Route::get('/hello', MyHandler::class),
+    ],
+    conditions: [
+        fn(ServerRequestInterface $request) => true,
+    ],
+);
+
+// This one will NOT be parsed
+$routes = new RouteGroup(
+    [
+        Route::get('/hello', MyHandler::class),
+    ],
+    conditions: [
+        fn(ServerRequestInterface $request) => false,
+    ],
+);
+```
+
+Additionally, conditions can return an array of attributes that will be added to the request attributes.
+
+```php
+class MyHandler implements RequestHandlerInterface
+{
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $name = $request->getAttribute('name');
+        return new Response("Hello, $name!");
+    }
+}
+
+$routes = new RouteGroup(
+    [
+        Route::get('/hello', MyHandler::class),
+    ],
+    conditions: [
+        // This condition will add the 'name' attribute to the request
+        fn(ServerRequestInterface $request) => ['name' => 'world'],
+    ],
+);
+```
+
+If a condition returns an array, it is assumed that the route group should be parsed.
+
+If any condition returns `false`, the route group will not be parsed:
+
+```php
+// This one will NOT be parsed
+$routes = new RouteGroup(
+    [
+        Route::get('/hello', MyHandler::class),
+    ],
+    conditions: [
+        fn(ServerRequestInterface $request) => true,
+        fn(ServerRequestInterface $request) => false,
+    ],
+);
+```
 
 ### Naming routes
 
-@todo continue working on the documentation
+Routes can be named.
+
+```php
+Route::get('/hello', MyHandler::class, name: 'hello_route');
+```
+
+Using the router, you can then generate the path to a named route:
+
+```php
+$router->pathTo('hello_route'); // Will return '/hello'
+```
+
+If a route has parameters, you can pass them as the second argument:
+
+```php
+Route::get('/hello/{name}', MyHandler::class, name: 'hello_route');
+
+$router->pathTo('hello_route', ['name' => 'world']); // Will return '/hello/world'
+```
