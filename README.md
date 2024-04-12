@@ -1,6 +1,21 @@
 # Router
 
-A PHP router.
+A PHP Router.
+
+## Disclaimer
+
+In order to ensure that this package is easy to integrate into your app, it is built around the **PHP Standard
+Recommendations** : it takes in
+a [PSR-7 Server Request](https://www.php-fig.org/psr/psr-7/#321-psrhttpmessageserverrequestinterface) and returns
+a [PSR-7 Response](https://www.php-fig.org/psr/psr-7/#33-psrhttpmessageresponseinterface). It also uses
+a [PSR-11 Container](https://www.php-fig.org/psr/psr-11/) (such
+as [EDICT](https://github.com/IngeniozIT/psr-container-edict)) to resolve the route handlers.
+
+It is inspired by routers from well-known frameworks *(did anyone say Laravel ?)* aswell as some home-made routers used
+internally by some major companies.
+
+It is build with quality in mind : readability, immutability, no global states, 100% code coverage, 100% mutation
+testing score, and validation from various static analysis tools at the highest level.
 
 ## About
 
@@ -22,227 +37,408 @@ composer require ingenioz-it/router
 
 ## Documentation
 
-### Configuring the Router
+### Overview
 
-#### Overview
+Here is the whole process of using this router :
 
-Here is a quick reference sample of how to configure the routes:
+- Create your routes
+- Instantiate the router
+- Handle the request:
+
+```php
+use IngeniozIT\Router\RouteGroup;
+use IngeniozIT\Router\Route;
+use IngeniozIT\Router\Router;
+
+// Create your routes
+
+$routes = new RouteGroup([
+    Route::get('/hello', fn() => new Response('Hello, world!')),
+    Route::get('/bye', fn() => new Response('Goodbye, world!')),
+]);
+
+// Instantiate the router
+
+/** @var Psr\Container\ContainerInterface $container */
+$container = new Container();
+$router = new Router($routes, $container);
+
+// Handle the request
+
+/** @var Psr\Http\Message\ServerRequestInterface $request */
+$request = new ServerRequest();
+/** @var Psr\Http\Message\ResponseInterface $response */
+$response = $router->handle($request);
+```
+
+### Basic routing
+
+The simplest route consists of a path and a handler.
+
+The path is a string, and the handler is a callable that will be executed when the route is matched. The handler must
+return a PSR-7 ResponseInterface.
+
+```php
+Route::get('/hello', fn() => new Response('Hello, world!'));
+```
+
+### Organizing routes
+
+Route groups are used to contain routes definitions.  
+They also allows you to visually organize your routes according to your application's logic.
+
+This is useful when you want to apply the same conditions, middlewares, or attributes to several routes at once (as we
+will see later).
+
+```php
+new RouteGroup([
+    Route::get('/hello', fn() => new Response('Hello, world!')),
+    Route::get('/bye', fn() => new Response('Goodbye, world!')),
+]);
+```
+
+Route groups can be nested to create a hierarchy of routes that will inherit everything from their parent groups.
+
+```php
+new RouteGroup([
+    Route::get('/', fn() => new Response('Welcome !')),
+    new RouteGroup([
+        Route::get('/hello', fn() => new Response('Hello, world!')),
+        Route::get('/hello-again', fn() => new Response('Hello again, world!')),
+    ]),
+    Route::get('/bye', fn() => new Response('Goodbye, world!')),
+]);
+```
+
+### HTTP methods
+
+You can specify the HTTP method that the route should match:
+
+```php
+Route::get('/hello', MyHandler::class);
+Route::post('/hello', MyHandler::class);
+Route::put('/hello', MyHandler::class);
+Route::patch('/hello', MyHandler::class);
+Route::delete('/hello', MyHandler::class);
+Route::options('/hello', MyHandler::class);
+```
+
+If you want a route to match multiple HTTP methods, you can use the `some` method:
+
+```php
+Route::some(['GET', 'POST'], '/hello', MyHandler::class);
+```
+
+You can also use the `any` method to match all HTTP methods:
+
+```php
+Route::any('/hello', MyHandler::class);
+```
+
+### Path parameters
+
+#### Basic usage
+
+You can define route parameters by using the `{}` syntax in the route path.
+
+```php
+Route::get('/hello/{name}', MyHandler::class);
+```
+
+The matched parameters will be available in the request attributes.
+
+```php
+class MyHandler implements RequestHandlerInterface
+{
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $name = $request->getAttribute('name');
+        return new Response("Hello, $name!");
+    }
+}
+
+Route::get('/hello/{name}', MyHandler::class);
+```
+
+#### Custom parameter patterns
+
+By default, the parameters are matched by the `[^/]+` regex (any characters that are not a `/`).
+
+You can specify a custom pattern by using the `where` parameter:
+
+```php
+// This route will only match if the name contains only letters
+Route::get('/hello/{name}', MyHandler::class, where: ['name' => '[a-zA-Z]+']);
+```
+
+#### Custom parameter patterns in a group
+
+Parameters patterns can also be defined globally for all routes inside a group:
 
 ```php
 $routes = new RouteGroup(
-    routes: [
-        Route::get(path: '/hello', callback: () => 'Hello, world!', name: 'hello'),
-        // Users
-        Route::get(path: '/users', callback: ListUsersHandler::class, name: 'users.list'),
-        Route::post(path: '/users/{id:[0-9]+}', callback: new CreateUserHandler(), name: 'user.create'),
-        // Admin
-        new RouteGroup(
-            routes: [
-                Route::get(path: '/admin', callback: PreviewAllPostsHandler::class, name: 'admin.index'),
-                Route::get(path: '/admin/logout', callback: AdminLogoutHandler::class, name: 'admin.logout'),
-            ],
-            conditions: ['IsAdmin'],
-        ),
-        // Web
-        Route::get(path: '{page}', callback: PageHandler::class, name: 'page'),
-        Route::get(path: '{page}', callback: PageNotFoundHandler::class, name: 'page.not_found'),
+    [
+        Route::get('/hello/{name}', MyHandler::class),
+        Route::get('/bye/{name}', MyOtherHandler::class),
     ],
-    middlewares: [
-        ExceptionHandler::class,
-        RedirectionHandler::class,
-    ],
-    patterns: ['page' => '.*'],
-);
-
-$router = new Router($routes, $container);
-
-$response = $router->handle($request);
-```
-
-#### Path
-
-The path can contain parameters, which are enclosed in curly braces:
-
-```php
-new RouteGroup([
-    Route::get(path: '/users/{id}', callback: /* handler */),
-]);
-```
-
-By default, the parameters match any character except `/`.
-
-To match a parameter with a different pattern, use a regular expression:
-
-```php
-new RouteGroup([
-    Route::get(path: '/users/{id:[0-9]+}', callback: /* handler */),
-]);
-```
-
-Alternatively, you can define the pattern in the `patterns` parameter:
-
-```php
-new RouteGroup([
-    Route::get(path: '/users/{id}', callback: /* handler */, patterns: ['id' => '[0-9]+']),
-]);
-```
-
-If you have a parameter that is used in multiple routes, you can define it inside the `RouteGroup`. It will be used in all the routes of the group:
-
-```php
-new RouteGroup(
-    routes: [
-        Route::get(path: '/users/{id}/posts/{postId}', callback: /* handler */),
-        Route::get(path: '/users/{id}/comments/{commentId}', callback: /* handler */),
-    ],
-    patterns: ['id' => '[0-9]+'],
+    where: ['name' => '[a-zA-Z]+'],
 );
 ```
 
-#### HTTP Method
+### Route handlers
 
-The `Route` class provides static methods to create routes to match each HTTP method:
+#### Closures
+
+The simplest way to define a route handler is to use a closure.  
+The closure must return a PSR-7 ResponseInterface.
 
 ```php
-new RouteGroup([
-    Route::get(/* ... */),
-    Route::post(/* ... */),
-    Route::put(/* ... */),
-    Route::patch(/* ... */),
-    Route::delete(/* ... */),
-    Route::head(/* ... */),
-    Route::options(/* ... */),
-    Route::any(/* ... */), // mathes all HTTP methods
-    Route::some(['GET', 'POST'], /* ... */), // matches only GET and POST
+Route::get('/hello', fn() => new Response('Hello, world!'));
+```
+
+Closures can take in parameters: the request and a request handler (the router itself).
+
+```php
+Route::get('/hello', function (ServerRequestInterface $request) {
+    return new Response('Hello, world!');
+});
+
+Route::get('/hello', function (ServerRequestInterface $request, RequestHandlerInterface $router) {
+    return new Response('Hello, world!');
+});
+```
+
+#### RequestHandlerInterface
+
+A route handler can be a callable, but it can also be a PSR RequestHandlerInterface.
+
+```php
+use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Http\Server\ServerRequestInterface;
+use Psr\Http\Server\ResponseInterface;
+
+class MyHandler implements RequestHandlerInterface
+{
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        return new Response('Hello, world!');
+    }
+}
+
+Route::get('/hello', new MyHandler());
+```
+
+#### MiddlewareInterface
+
+Sometimes, you might want a handler to be able to "refuse" to handle the request, and pass it to the next handler in the
+chain.
+
+This is done by using a PSR MiddlewareInterface as a route handler :
+
+```php
+use Psr\Http\Server\MiddlewareInterface;
+
+class MyHandler implements MiddlewareInterface
+{
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        if (resourceDoesNotExist()) {
+            // We don't want this handler to continue processing the request,
+            // so we pass the responsability to the next handler
+            return $handler->handle($request);
+        }
+
+        /* ... */
+    }
+}
+
+$routes = new RouteGroup([
+    // This handler will be called first
+    Route::get('/{ressource}', fn() => new MyHandler()),
+    // This handler will be called next
+    Route::get('/{ressource}', fn() => new Response('Hello, world!')),
 ]);
 ```
 
-#### Handlers
+#### Dependency injection
 
-The handler can be a callable, a PSR-15 `RequestHandlerInterface`, a PSR-15 `MiddlewareInterface`, or a string.
-    
+Instead of using a closure or a class instance, your handler can be a class name. The router will then resolve the class
+using the PSR container you injected into the router.
+
 ```php
-new RouteGroup([
-    Route::get(path: '/baz', callback: () => 'Hello, world!'),
-    Route::get(path: '/bar', callback: new Handler()),
-    Route::get(path: '/foo', callback: Handler::class),
-]);
+Route::get('/hello', MyHandler::class);
 ```
 
-If the handler is a string, the container will be used to resolve it.
+*The router will resolve this handler by calling `get(MyHandler::class)` on the container. This means that you can use
+any value that the container can resolve into a valid route handler.*
 
-If the handler is a middleware, calling the next handler will continue the routing:
+### Additional attributes
+
+You can add additional attributes to a route by using the `with` method.  
+Just like path parameters, these attributes will be available in the request attributes.
 
 ```php
-new RouteGroup([
-    Route::get(path: '/', callback: ($request, $handler) => $handler->handle($request)), // Will delegate to the next route
-    Route::get(path: '/', callback: () => 'Hello, world!'),
-]);
+class MyHandler implements RequestHandlerInterface
+{
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $name = $request->getAttribute('name');
+        return new Response("Hello, $name!");
+    }
+}
+
+// Notice there is no name parameter in the route path
+Route::get('/hello', MyHandler::class, with: ['name' => 'world']);
 ```
 
-
-#### Name
-
-You can name a route:
+Attributes can also be defined globally for all the routes inside a group:
 
 ```php
-new RouteGroup([
-    Route::get(path: '/', callback: /* handler */, name: 'home'),
-    Route::get(path: '/users', callback: /* handler */, name: 'users'),
-]);
+$routes = new RouteGroup(
+    [
+        Route::get('/hello', MyHandler::class),
+        Route::get('/bye', MyOtherHandler::class),
+    ],
+    with: ['name' => 'world'],
+);
 ```
 
-#### Middlewares
+### Middlewares
 
-You can add middlewares to a route group:
+Middlewares are classes that can modify the request and/or the response before and after the route handler is called.
+
+They can be applied to a route group.
 
 ```php
-new RouteGroup(
-    route: [
-        Route::get(path: '/', callback: /* handler */),
+$routes = new RouteGroup(
+    [
+        Route::get('/hello', MyHandler::class),
     ],
     middlewares: [
-        new MyMiddleware(),
         MyMiddleware::class,
-        ($request, $handler) => $handler->handle($request),
+        MyOtherMiddleware::class,
     ],
 );
 ```
 
-A middleware can be a PSR-15 `MiddlewareInterface`, a string, or a callable.
+The middleware class must implement the PSR `\Psr\Http\Server\MiddlewareInterface` interface.
 
-If the middleware is a string, the container will be used to resolve it.
+### Conditions
 
-If the middleware is a callable, it will be called with the request and the next handler as arguments.
-
-#### Subgroups
-
-You can nest route groups:
+Conditions are callables that will determine if a route group should be parsed.
 
 ```php
-new RouteGroup(
-    routes: [
-        Route::get(path: '/foo', callback: /* handler */),
-        new RouteGroup(
-            routes: [
-                Route::get(path: '/bar', callback: /* handler */),
-                Route::get(path: '/baz', callback: /* handler */),
-            ],
-        ),
+// This one will be parsed
+$routes = new RouteGroup(
+    [
+        Route::get('/hello', MyHandler::class),
+    ],
+    conditions: [
+        fn(ServerRequestInterface $request) => true,
+    ],
+);
+
+// This one will NOT be parsed
+$routes = new RouteGroup(
+    [
+        Route::get('/hello', MyHandler::class),
+    ],
+    conditions: [
+        fn(ServerRequestInterface $request) => false,
     ],
 );
 ```
 
-#### Conditions
-
-You can add conditions to a route group. The conditions are checked before the route group is parsed.
-
-Conditions take the request as argument. They can either return `false` if the request does not match the conditions, or an array of parameters to inject into the request.
+Additionally, conditions can return an array of attributes that will be added to the request attributes.
 
 ```php
-new RouteGroup(
-    routes: [
-        new RouteGroup(
-            conditions: [
-                // The request must have the header 'X-Is-Admin'
-                fn ($request) => $request->hasHeader('X-Is-Admin') ? ['IsAdmin' => true] : false,
-            ],
-            routes: [
-                Route::get(path: '/admin-stuff', callback: /* handler */),
-            ],
-        ),
-        Route::get(path: '/foo', callback: /* handler */),
+class MyHandler implements RequestHandlerInterface
+{
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $name = $request->getAttribute('name');
+        return new Response("Hello, $name!");
+    }
+}
+
+$routes = new RouteGroup(
+    [
+        Route::get('/hello', MyHandler::class),
+    ],
+    conditions: [
+        // This condition will add the 'name' attribute to the request
+        fn(ServerRequestInterface $request) => ['name' => 'world'],
     ],
 );
 ```
 
-If the request does not match the condition, the route group will be skipped.
+If a condition returns an array, it is assumed that the route group should be parsed.
 
-If a condition is a string, the container will be used to resolve it.
-
-### Using the Router
-
-#### Creating the router
-
-The `Router` uses a `RouteGroup` to store the routes and a PSR-11 `ContainerInterface` to inject dependencies into the route handlers.
+If any condition returns `false`, the route group will not be parsed:
 
 ```php
-use IngeniozIT\Router\Router;
-use IngeniozIT\Router\RouteGroup;
-
-$container = /* PSR ContainerInterface */;
-$routeGroup = new RouteGroup([/* routes */]);
-
-$router = new Router($routeGroup, $container);
+// This one will NOT be parsed
+$routes = new RouteGroup(
+    [
+        Route::get('/hello', MyHandler::class),
+    ],
+    conditions: [
+        fn(ServerRequestInterface $request) => true,
+        fn(ServerRequestInterface $request) => false,
+    ],
+);
 ```
 
-#### Routing a request
+### Naming routes
 
-The `Router` uses a PSR-7 `ServerRequestInterface` to route the request.
-
-It returns a PSR-7 `ResponseInterface`.
+Routes can be named.
 
 ```php
-$request = /* PSR ServerRequestInterface */;
-$response = $router->handle($request);
+Route::get('/hello', MyHandler::class, name: 'hello_route');
 ```
+
+Using the router, you can then generate the path to a named route:
+
+```php
+$router->pathTo('hello_route'); // Will return '/hello'
+```
+
+If a route has parameters, you can pass them as the second argument:
+
+```php
+Route::get('/hello/{name}', MyHandler::class, name: 'hello_route');
+
+$router->pathTo('hello_route', ['name' => 'world']); // Will return '/hello/world'
+```
+
+### Error handling
+
+This router uses custom exceptions to handle errors.
+
+Here is the inheritance tree of those exceptions:
+
+- `IngeniozIT\Router\RouterException` (interface): the base exception, all other exceptions inherit from this one
+    - `IngeniozIT\Router\EmptyRouteStack`: thrown when no route has been matched by the router
+    - `IngeniozIT\Router\Route\RouteException`: (interface) the base exception for route errors
+        - `IngeniozIT\Router\Route\Exception\InvalidRouteHandler`: thrown when the route handler is not a valid request
+          handler
+        - `IngeniozIT\Router\Route\Exception\InvalidRouteResponse`: thrown when the route handler does not return a
+          PSR-7
+          ResponseInterface
+        - `IngeniozIT\Router\Route\Exception\RouteNotFound`: thrown when calling `$router->pathTo` with a route name
+          that does not
+          exist
+        - `IngeniozIT\Router\Route\Exception\InvalidRouteParameter`: thrown when calling `$router->pathTo` with invalid
+          parameters
+        - `IngeniozIT\Router\Route\Exception\MissingRouteParameters`: thrown when calling `$router->pathTo` with missing
+          parameters
+    - `IngeniozIT\Router\Middleware\MiddlewareException`: (interface) the base exception for middleware errors
+        - `IngeniozIT\Router\Middleware\Exception\InvalidMiddlewareHandler`: thrown when a middleware is not a valid
+          middleware handler
+        - `IngeniozIT\Router\Middleware\Exception\InvalidMiddlewareResponse`: thrown when a middleware does not return a
+          PSR-7 ResponseInterface
+    - `IngeniozIT\Router\Condition\ConditionException`: (interface) the base exception for condition errors
+        - `IngeniozIT\Router\Condition\Exception\InvalidConditionHandler`: thrown when a condition is not a valid
+          condition handler
+        - `IngeniozIT\Router\Condition\Exception\InvalidConditionResponse`: thrown when a condition does not return a
+          valid response

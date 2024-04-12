@@ -1,31 +1,23 @@
 <?php
 
-declare(strict_types=1);
-
 namespace IngeniozIT\Router\Tests;
 
-use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
-use IngeniozIT\Router\{Router, RouteGroup, Route, InvalidRoute};
-use IngeniozIT\Http\Message\UriFactory;
 use Closure;
+use IngeniozIT\Http\Message\UriFactory;
+use IngeniozIT\Router\Condition\Exception\InvalidConditionHandler;
+use IngeniozIT\Router\Condition\Exception\InvalidConditionResponse;
+use IngeniozIT\Router\Route;
+use IngeniozIT\Router\RouteGroup;
+use IngeniozIT\Router\Tests\Utils\RouterCase;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Throwable;
 
-/**
- * @SuppressWarnings(PHPMD.StaticAccess)
- */
-final class ConditionTest extends TestCase
+final class ConditionsTest extends RouterCase
 {
-    use PsrTrait;
-
-    private function router(RouteGroup $routeGroup, ?Closure $fallback = null): Router
-    {
-        return new Router($routeGroup, self::container(), self::responseFactory(), self::streamFactory(), $fallback);
-    }
-
-    /**
-     * @dataProvider providerConditions
-     */
-    public function testRouteGroupCanHaveConditions(Closure $condition, string $expectedResponse): void
+    #[DataProvider('providerConditions')]
+    public function testRouteGroupsCanHaveConditions(Closure $condition, string $expectedResponse): void
     {
         $routeGroup = new RouteGroup(
             routes: [
@@ -35,8 +27,9 @@ final class ConditionTest extends TestCase
         );
         $request = self::serverRequest('GET', '/');
 
-        $response = $this->router($routeGroup, static fn(): ResponseInterface =>
-            self::response('TEST'))->handle($request);
+        $response = $this->router($routeGroup, static fn(): ResponseInterface => self::response('TEST'))->handle(
+            $request
+        );
 
         self::assertEquals($expectedResponse, (string)$response->getBody());
     }
@@ -58,7 +51,7 @@ final class ConditionTest extends TestCase
         ];
     }
 
-    public function testRouteGroupCanHaveMultipleConditions(): void
+    public function testRouteGroupsCanHaveMultipleConditions(): void
     {
         $routeGroup = new RouteGroup(
             routes: [
@@ -71,19 +64,22 @@ final class ConditionTest extends TestCase
         );
         $request = self::serverRequest('GET', '/');
 
-        $response = $this->router($routeGroup, static fn(): ResponseInterface =>
-        self::response('TEST'))->handle($request);
+        $response = $this->router($routeGroup, static fn(): ResponseInterface => self::response('TEST'))->handle(
+            $request
+        );
 
         self::assertEquals('TEST', (string)$response->getBody());
     }
 
-    public function testConditionCanAddAttributesToARequest(): void
+    public function testConditionsCanAddAttributesToARequest(): void
     {
         $routeGroup = new RouteGroup(
             routes: [
                 Route::get(
                     path: '/',
-                    callback: static fn(ServerRequestInterface $request): ResponseInterface => self::response(var_export($request->getAttribute('foo'), true))
+                    callback: static fn(ServerRequestInterface $request): ResponseInterface => self::response(
+                        var_export($request->getAttribute('foo'), true)
+                    )
                 ),
             ],
             conditions: [
@@ -98,10 +94,14 @@ final class ConditionTest extends TestCase
     }
 
     /**
-     * @dataProvider providerInvalidConditions
+     * @param class-string<Throwable> $expectedException
      */
-    public function testCannotExecuteInvalidConditions(mixed $condition): void
-    {
+    #[DataProvider('providerInvalidConditions')]
+    public function testRouterCannotExecuteInvalidConditions(
+        mixed $condition,
+        string $expectedException,
+        string $expectedMessage,
+    ): void {
         $routeGroup = new RouteGroup(
             routes: [
                 Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST')),
@@ -110,18 +110,27 @@ final class ConditionTest extends TestCase
         );
         $request = self::serverRequest('GET', '/');
 
-        self::expectException(InvalidRoute::class);
+        self::expectException($expectedException);
+        self::expectExceptionMessage($expectedMessage);
         $this->router($routeGroup)->handle($request);
     }
 
     /**
-     * @return array<string, array{0: mixed}>
+     * @return array<string, array{mixed, class-string<Throwable>, string}>
      */
     public static function providerInvalidConditions(): array
     {
         return [
-            'not a callable' => [UriFactory::class],
-            'callable that does not return bool or array' => [static fn(): int => 42],
+            'not a callable' => [
+                UriFactory::class,
+                InvalidConditionHandler::class,
+                'Condition handler must be a callable, IngeniozIT\Http\Message\UriFactory given.',
+            ],
+            'callable that does not return bool or array' => [
+                static fn(): int => 42,
+                InvalidConditionResponse::class,
+                'Condition must either return an array or a boolean, int given.',
+            ],
         ];
     }
 }
