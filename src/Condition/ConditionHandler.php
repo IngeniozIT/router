@@ -11,6 +11,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 use function is_array;
+use function is_bool;
 use function is_callable;
 use function is_string;
 
@@ -38,10 +39,10 @@ readonly final class ConditionHandler
     {
         $result = ($this->handler)($request);
 
-        if ($result !== false && !is_array($result)) {
+        if (!is_bool($result) && !is_array($result)) {
             throw new InvalidConditionResponse($result);
         }
 
-        return $result;
+        return $result === true ? [] : $result;
     }
 }

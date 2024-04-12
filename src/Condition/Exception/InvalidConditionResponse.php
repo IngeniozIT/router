@@ -13,6 +13,8 @@ final class InvalidConditionResponse extends InvalidArgumentException implements
 {
     public function __construct(public mixed $response)
     {
-        parent::__construct('Condition must either return an array or false, ' . get_debug_type($response) . ' given.');
+        parent::__construct(
+            'Condition must either return an array or a boolean, ' . get_debug_type($response) . ' given.'
+        );
     }
 }

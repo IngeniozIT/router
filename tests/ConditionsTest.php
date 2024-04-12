@@ -127,9 +127,9 @@ final class ConditionsTest extends RouterCase
                 'Condition handler must be a callable, IngeniozIT\Http\Message\UriFactory given.',
             ],
             'callable that does not return bool or array' => [
-                static fn(): bool => true,
+                static fn(): int => 42,
                 InvalidConditionResponse::class,
-                'Condition must either return an array or false, bool given.',
+                'Condition must either return an array or a boolean, int given.',
             ],
         ];
     }
