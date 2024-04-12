@@ -410,3 +410,35 @@ Route::get('/hello/{name}', MyHandler::class, name: 'hello_route');
 
 $router->pathTo('hello_route', ['name' => 'world']); // Will return '/hello/world'
 ```
+
+### Error handling
+
+This router uses custom exceptions to handle errors.
+
+Here is the inheritance tree of those exceptions:
+
+- `IngeniozIT\Router\RouterException` (interface): the base exception, all other exceptions inherit from this one
+    - `IngeniozIT\Router\EmptyRouteStack`: thrown when no route has been matched by the router
+    - `IngeniozIT\Router\Route\RouteException`: (interface) the base exception for route errors
+        - `IngeniozIT\Router\Route\Exception\InvalidRouteHandler`: thrown when the route handler is not a valid request
+          handler
+        - `IngeniozIT\Router\Route\Exception\InvalidRouteResponse`: thrown when the route handler does not return a
+          PSR-7
+          ResponseInterface
+        - `IngeniozIT\Router\Route\Exception\RouteNotFound`: thrown when calling `$router->pathTo` with a route name
+          that does not
+          exist
+        - `IngeniozIT\Router\Route\Exception\InvalidRouteParameter`: thrown when calling `$router->pathTo` with invalid
+          parameters
+        - `IngeniozIT\Router\Route\Exception\MissingRouteParameters`: thrown when calling `$router->pathTo` with missing
+          parameters
+    - `IngeniozIT\Router\Middleware\MiddlewareException`: (interface) the base exception for middleware errors
+        - `IngeniozIT\Router\Middleware\Exception\InvalidMiddlewareHandler`: thrown when a middleware is not a valid
+          middleware handler
+        - `IngeniozIT\Router\Middleware\Exception\InvalidMiddlewareResponse`: thrown when a middleware does not return a
+          PSR-7 ResponseInterface
+    - `IngeniozIT\Router\Condition\ConditionException`: (interface) the base exception for condition errors
+        - `IngeniozIT\Router\Condition\Exception\InvalidConditionHandler`: thrown when a condition is not a valid
+          condition handler
+        - `IngeniozIT\Router\Condition\Exception\InvalidConditionResponse`: thrown when a condition does not return a
+          valid response
