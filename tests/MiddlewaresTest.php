@@ -119,4 +119,26 @@ final class MiddlewaresTest extends RouterCase
             ],
         ];
     }
+
+    public function testRouteGroupWithMiddlewareDoesNotAffectTheNextRoutes(): void
+    {
+        $routeGroup = new RouteGroup([
+            new RouteGroup(
+                routes: [
+                    Route::get(path: '/no', callback: static fn(): ResponseInterface => self::response('NO')),
+                ],
+                middlewares: [
+                    fn($request, $handler) => self::response(
+                        strrev((string)$handler->handle($request)->getBody())
+                    )
+                ],
+            ),
+            Route::get(path: '/', callback: static fn(): ResponseInterface => self::response('TEST')),
+        ]);
+        $request = self::serverRequest('GET', '/');
+
+        $response = $this->router($routeGroup)->handle($request);
+
+        self::assertEquals('TEST', (string)$response->getBody());
+    }
 }

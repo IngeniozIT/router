@@ -79,9 +79,12 @@ final class Router implements RequestHandlerInterface
                 $newRouter = new Router(
                     $route,
                     $this->container,
-                    $this->handle(...),
                 );
-                return $newRouter->handle($request);
+                try {
+                    return $newRouter->handle($request);
+                } catch (EmptyRouteStack) {
+                    continue;
+                }
             }
 
             $matchedParams = $route->match($request);
