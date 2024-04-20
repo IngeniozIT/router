@@ -37,7 +37,7 @@ final readonly class RouteElement
 
     /**
      * @param array<string, string> $where
-     * @param array<string, string> $with
+     * @param array<string, mixed> $with
      */
     public function __construct(
         public int $method,

@@ -18,7 +18,7 @@ final class RouteGroup
      * @param mixed[] $middlewares
      * @param mixed[] $conditions
      * @param array<string, string> $where
-     * @param array<string, string> $with
+     * @param array<string, mixed> $with
      */
     public function __construct(
         array $routes,

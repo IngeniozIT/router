@@ -39,84 +39,134 @@ final readonly class Route
 
     /**
      * @param array<string, string> $where
-     * @param array<string, string> $with
+     * @param array<string, mixed> $with
      */
-    public static function get(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): RouteElement
-    {
+    public static function get(
+        string $path,
+        mixed $callback,
+        array $where = [],
+        array $with = [],
+        ?string $name = null
+    ): RouteElement {
         return new RouteElement(self::GET, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
-     * @param array<string, string> $with
+     * @param array<string, mixed> $with
      */
-    public static function post(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): RouteElement
-    {
+    public static function post(
+        string $path,
+        mixed $callback,
+        array $where = [],
+        array $with = [],
+        ?string $name = null
+    ): RouteElement {
         return new RouteElement(self::POST, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
-     * @param array<string, string> $with
+     * @param array<string, mixed> $with
      */
-    public static function put(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): RouteElement
-    {
+    public static function put(
+        string $path,
+        mixed $callback,
+        array $where = [],
+        array $with = [],
+        ?string $name = null
+    ): RouteElement {
         return new RouteElement(self::PUT, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
-     * @param array<string, string> $with
+     * @param array<string, mixed> $with
      */
-    public static function patch(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): RouteElement
-    {
+    public static function patch(
+        string $path,
+        mixed $callback,
+        array $where = [],
+        array $with = [],
+        ?string $name = null
+    ): RouteElement {
         return new RouteElement(self::PATCH, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
-     * @param array<string, string> $with
+     * @param array<string, mixed> $with
      */
-    public static function delete(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): RouteElement
-    {
+    public static function delete(
+        string $path,
+        mixed $callback,
+        array $where = [],
+        array $with = [],
+        ?string $name = null
+    ): RouteElement {
         return new RouteElement(self::DELETE, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
-     * @param array<string, string> $with
+     * @param array<string, mixed> $with
      */
-    public static function head(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): RouteElement
-    {
+    public static function head(
+        string $path,
+        mixed $callback,
+        array $where = [],
+        array $with = [],
+        ?string $name = null
+    ): RouteElement {
         return new RouteElement(self::HEAD, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
-     * @param array<string, string> $with
+     * @param array<string, mixed> $with
      */
-    public static function options(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): RouteElement
-    {
+    public static function options(
+        string $path,
+        mixed $callback,
+        array $where = [],
+        array $with = [],
+        ?string $name = null
+    ): RouteElement {
         return new RouteElement(self::OPTIONS, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param array<string, string> $where
-     * @param array<string, string> $with
+     * @param array<string, mixed> $with
      */
-    public static function any(string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): RouteElement
-    {
+    public static function any(
+        string $path,
+        mixed $callback,
+        array $where = [],
+        array $with = [],
+        ?string $name = null
+    ): RouteElement {
         return new RouteElement(self::ANY, $path, $callback, $where, $with, $name);
     }
 
     /**
      * @param string[] $methods
      * @param array<string, string> $where
-     * @param array<string, string> $with
+     * @param array<string, mixed> $with
      */
-    public static function some(array $methods, string $path, mixed $callback, array $where = [], array $with = [], ?string $name = null): RouteElement
-    {
-        $method = array_reduce($methods, static fn($carry, $methodString): int => $carry | self::METHODS[strtoupper($methodString)], 0);
+    public static function some(
+        array $methods,
+        string $path,
+        mixed $callback,
+        array $where = [],
+        array $with = [],
+        ?string $name = null
+    ): RouteElement {
+        $method = array_reduce(
+            $methods,
+            static fn($carry, $methodString): int => $carry | self::METHODS[strtoupper($methodString)],
+            0
+        );
 
         return new RouteElement($method, $path, $callback, $where, $with, $name);
     }
