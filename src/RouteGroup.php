@@ -61,6 +61,6 @@ final class RouteGroup
 
     private function concatenatedNameForRouteGroup(): ?string
     {
-        return $this->name === null ? null : $this->name . '.';
+        return $this->name === null ? null : str_replace('..', '.', $this->name . '.');
     }
 }

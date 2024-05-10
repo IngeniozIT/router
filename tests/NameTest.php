@@ -55,7 +55,11 @@ final class NameTest extends RouterCase
     {
         $routeGroup = new RouteGroup(
             [
-                Route::get('/foo', 'foo', name: 'route_name'),
+                new RouteGroup(
+                    [
+                        Route::get('/foo', 'foo', name: 'route_name'),
+                    ],
+                ),
             ],
             name: 'group',
         );
